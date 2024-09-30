@@ -16,6 +16,7 @@ from src.config import settings
 import time
 
 from src.frontend.pages.router import router as frontend_router
+from src.user.router import router as user_router
 from src.mapping.classification import MODEL_MAP, ModelAlgorithm
 
 
@@ -31,8 +32,8 @@ async def lifespan(app_instance: FastAPI):
 
 
 app = FastAPI(
-    title="Best Practice FastAPI",
-    description="PydanticSettings, Alembic, RedisCache",
+    title="TrainMe",
+    description="`No-code` платформа для автоматизации процессов построения и развертывания моделей машинного обучения с возможностью использования пользователями, не обладающими знаниями программирования ",
     lifespan=lifespan,
     docs_url="/docs",
 )
@@ -53,11 +54,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(user_router)
 app.include_router(frontend_router)
 
 
 # Moc cache
-@app.get("/moc-transactions")
+@app.get("/moc-transactions", tags=["Test cache"])
 @cache(expire=5)
 async def long_translation():
     time.sleep(5)
@@ -67,7 +69,7 @@ async def long_translation():
     }
 
 
-@app.post("/ml/classification/create")
+@app.post("/ml/classification/create", tags=["Create Router"])
 async def add_route(endpoint_path: str, algorithm: ModelAlgorithm, dataset: UploadFile, label_name: str):
     """
     Обработчик, который создает другие обработчики.
@@ -91,7 +93,7 @@ async def add_route(endpoint_path: str, algorithm: ModelAlgorithm, dataset: Uplo
                 "probability": max(probability)
             } for predict, probability in zip(model.predict(input_df_encoded), model.predict_proba(input_df_encoded))]
 
-    app.add_api_route(path=f"/{endpoint_path}", endpoint=classification_endpoint, methods=["POST"])
+    app.add_api_route(path=f"/{endpoint_path}", endpoint=classification_endpoint, methods=["POST"], tags=["ML-Routers"])
     app.openapi_schema = None
     return {
         "message": "successful create classification handler",
