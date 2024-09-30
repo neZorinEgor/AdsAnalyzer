@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TrainMe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    {% extends 'components/header.html' %}
+    {% block content %}
+    <main>
+        <div class="container mx-auto mt-4">
+            <h1 class="text-xl font-bold mb-4">Создать классификационный обработчик</h1>
+            <form id="create-handler-form" class="space-y-4" method="post" enctype="multipart/form-data">
+                <div>
+                    <label for="endpoint_path" class="block font-medium">Путь конечной точки:</label>
+                    <input type="text" id="endpoint_path" name="endpoint_path" required class="mt-1 p-2 border border-gray-300 rounded w-full">
+                </div>
+
+                <div>
+                    <label for="algorithm" class="block font-medium">Выберите алгоритм:</label>
+                    <select id="algorithm" name="algorithm" required class="mt-1 p-2 border border-gray-300 rounded w-full">
+                        <option value="logistic_regression">Логистическая регрессия</option>
+                        <option value="boost">Градиентный бустинг</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="dataset" class="block font-medium">Загрузите набор данных (CSV):</label>
+                    <input type="file" id="dataset" name="dataset" accept=".csv" required class="mt-1">
+                </div>
+
+                <div>
+                    <label for="label_name" class="block font-medium">Имя метки:</label>
+                    <input type="text" id="label_name" name="label_name" required class="mt-1 p-2 border border-gray-300 rounded w-full">
+                </div>
+
+                <button type="submit" class="bg-[#134e4a] text-white py-2 px-4 rounded">Создать обработчик</button>
+            </form>
+            <div id="response" class="mt-4"></div>
+        </div>
+
+        <script>
+            document.getElementById('create-handler-form').addEventListener('submit', async (event) => {
+                event.preventDefault(); // Отменяем стандартное поведение формы
+
+                const formData = new FormData(event.target); // Создаем объект FormData
+                const responseDiv = document.getElementById('response');
+
+                // Получаем базовый URL
+                const baseUrl = window.location.origin;
+
+                // Отправляем данные
+                try {
+                    const response = await fetch(`/ml/classification/create?endpoint_path=${encodeURIComponent(event.target.endpoint_path.value)}&algorithm=${encodeURIComponent(event.target.algorithm.value)}&label_name=${encodeURIComponent(event.target.label_name.value)}`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                        },
+                        body: formData
+                    });
+
+                    // Получаем статус и респонс
+                    const statusCode = response.status;
+                    const statusText = response.statusText;
+                    let responseBody;
+
+                    if (response.ok) {
+                        responseBody = await response.json();
+                    } else {
+                        responseBody = await response.text();
+                    }
+
+                    // Формируем вывод о статусе ответа
+                    responseDiv.innerHTML = `
+                        <div class="p-4 border border-gray-300 rounded bg-white shadow">
+                            <h2 class="font-bold">Ответ сервера:</h2>
+                            <p>Статус код: <span class="font-semibold">${statusCode} ${statusText}</span></p>
+                            <p><strong>Сообщение:</strong> ${responseBody.message}</p>
+                            <p><strong>Алгоритм:</strong> ${responseBody.ml_algorithm}</p>
+                            <p><strong>Путь конечной точки:</strong> <a href="${baseUrl}${responseBody.endpoint_path}" class="text-blue-600 hover:underline">${baseUrl}${responseBody.endpoint_path}</a></p>
+                        </div>
+                    `;
+                } catch (error) {
+                    responseDiv.innerHTML = `<p class="text-red-600">Ошибка: ${error.message}</p>`;
+                }
+            });
+        </script>
+    </main>
+    {% endblock %}
+</body>
+</html>

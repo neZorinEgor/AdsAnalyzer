@@ -15,6 +15,7 @@ from src.config import settings
 
 import time
 
+from src.frontend.pages.router import router as frontend_router
 from src.mapping.classification import MODEL_MAP, ModelAlgorithm
 
 
@@ -51,6 +52,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+
+app.include_router(frontend_router)
 
 
 # Moc cache
