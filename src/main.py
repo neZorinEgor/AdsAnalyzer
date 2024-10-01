@@ -10,7 +10,7 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
 from pydantic import create_model
 from redis import asyncio as aioredis
-from starlette.staticfiles import StaticFiles
+from fastapi.staticfiles import StaticFiles
 
 from src.config import settings
 
@@ -73,7 +73,7 @@ async def long_translation():
 
 
 @app.post("/ml/classification/create", tags=["Create Router"])
-async def add_route(endpoint_path: str, algorithm: ModelAlgorithm, dataset: UploadFile, label_name: str):
+async def add_classification_router(endpoint_path: str, algorithm: ModelAlgorithm, dataset: UploadFile, label_name: str):
     """
     Обработчик, который создает другие обработчики.
     """
@@ -82,7 +82,7 @@ async def add_route(endpoint_path: str, algorithm: ModelAlgorithm, dataset: Uplo
     df.dropna(inplace=True)
     model = MODEL_MAP[algorithm](max_iter=1000)
     feature_names = list(df.drop(columns=label_name))
-    schema = create_model('DynamicInput', **{name: (float, ...) for name in feature_names})
+    schema = create_model('schema', **{name: (float, ...) for name in feature_names})
     model.fit(pd.get_dummies(df[feature_names]), df[label_name])
 
     # Обработчик, который будет создан клиентом
