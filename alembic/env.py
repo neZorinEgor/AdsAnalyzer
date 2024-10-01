@@ -14,9 +14,9 @@ config.set_section_option(section, "DB_URL", settings.mysql_url)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# App models
+# App weights
 from src.database import Base
-# Your models here ↓
+# Your weights here ↓
 # ...
 
 target_metadata = Base.metadata

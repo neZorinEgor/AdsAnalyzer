@@ -1,3 +1,4 @@
+import datetime
 from typing import List
 
 import pandas as pd
@@ -15,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from src.config import settings
 
 import time
+import joblib
 
 from src.frontend.pages.router import router as frontend_router
 from src.user.router import router as user_router
@@ -84,6 +86,8 @@ async def add_classification_router(endpoint_path: str, algorithm: ModelAlgorith
     feature_names = list(df.drop(columns=label_name))
     schema = create_model('schema', **{name: (float, ...) for name in feature_names})
     model.fit(pd.get_dummies(df[feature_names]), df[label_name])
+    model_in_file = f"src/weights/{datetime.datetime.now(datetime.UTC)}.sav"
+    joblib.dump(model, model_in_file)
 
     # Обработчик, который будет создан клиентом
     async def classification_endpoint(data: List[schema]):
@@ -94,7 +98,7 @@ async def add_classification_router(endpoint_path: str, algorithm: ModelAlgorith
             {
                 "predict_class": int(predict),
                 "probability": max(probability)
-            } for predict, probability in zip(model.predict(input_df_encoded), model.predict_proba(input_df_encoded))]
+            } for predict, probability in zip(model.predict(input_df_encoded), joblib.load(model_in_file).predict_proba(input_df_encoded))]
 
     app.add_api_route(path=f"/{endpoint_path}", endpoint=classification_endpoint, methods=["POST"], tags=["ML-Routers"])
     app.openapi_schema = None
