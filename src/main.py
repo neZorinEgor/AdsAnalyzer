@@ -10,6 +10,7 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
 from pydantic import create_model
 from redis import asyncio as aioredis
+from starlette.staticfiles import StaticFiles
 
 from src.config import settings
 
@@ -37,6 +38,8 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
 )
+
+app.mount("/static", StaticFiles(directory="src/frontend/static"), name="static")
 
 # Origins url's for CORS
 origins = [

@@ -1,14 +1,20 @@
 {# Header #}
 <header class="py-4 bg-gray border-b-2 shadow-lg">
     <div class="container mx-auto flex justify-between items-end h-full">
-        <h1 class="text-xl font-bold text-[#134e4a]">TrainMe</h1>
+        <div class="mb-6 md:mb-0">
+              <a href="https://flowbite.com/" class="flex items-center">
+                  <img src="https://www.svgrepo.com/show/450794/deep-learning.svg" class="h-8 me-3" alt="TrainMe" />
+                  <span class="self-center text-2xl font-semibold whitespace-nowrap">TrainMe</span>
+              </a>
+        </div>
         <div class="space-x-4">
             <a class="font-medium text-base" href="#">Алгоритмы</a>
             <a class="font-medium text-base" href="#">О проекте</a>
-            <a class="transition bg-transparent hover:bg-[#134e4a] text-[#134e4a] font-semibold hover:text-white py-2 px-4 border border-[#134e4a] hover:border-transparent rounded" href="#">Создать ml-обработчик</a>
+            <a class="transition bg-transparent hover:bg-black text-black font-semibold hover:text-white py-2 px-4 border border-black hover:border-transparent rounded" href="#">Создать ml-обработчик</a>
         </div>
     </div>
 </header>
+
 
 {% block content %}
 {% endblock %}
