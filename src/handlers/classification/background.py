@@ -6,17 +6,16 @@ import pandas as pd
 from fastapi import UploadFile, FastAPI
 from pydantic import create_model
 
-from src.ml.mapped import ModelAlgorithm, MODEL_MAP
+from src.handlers.classification.mapped import ModelAlgorithm, MODEL_MAP
 
 
-def create_clf_handler(
+async def create_clf_handler(
         endpoint_path: str,          # Путь до обработчика пользователя
         algorithm: ModelAlgorithm,   # Алгоритм машинного обучения
         dataset: UploadFile,         # Данные, на которых обучается алгоритм
         label_name: str,             # Имя целевой переменной в dataset,
         app: FastAPI                 # Экземпляр сервера
 ):
-    # print(dataset.file.closed)
     # Обработка данных
     df = pd.read_csv(dataset.file)
     df.dropna(inplace=True)
@@ -30,7 +29,7 @@ def create_clf_handler(
     joblib.dump(model, model_in_file)
 
     # Обработчик, который будет создан клиентом
-    def classification_endpoint(data: List[schema]):
+    async def classification_endpoint(data: List[schema]):
         input_df = pd.DataFrame(data)
         input_df_encoded = pd.get_dummies(input_df, drop_first=True)
         input_df_encoded = input_df_encoded.reindex(columns=model.feature_names_in_, fill_value=0)
