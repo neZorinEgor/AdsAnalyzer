@@ -1,26 +1,21 @@
-import datetime
-from typing import List
+from copy import deepcopy
 
-import pandas as pd
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, BackgroundTasks, File
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
-from pydantic import create_model
 from redis import asyncio as aioredis
 from fastapi.staticfiles import StaticFiles
 
+from src.frontend.pages.router import router as frontend_router
+from src.ml.background import create_clf_handler
+from src.ml.mapped import ModelAlgorithm
 from src.config import settings
 
 import time
-import joblib
-
-from src.frontend.pages.router import router as frontend_router
-from src.user.router import router as user_router
-from src.mapping.classification import MODEL_MAP, ModelAlgorithm
 
 
 # Event-Manager
@@ -59,7 +54,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(user_router)
 app.include_router(frontend_router)
 
 
@@ -75,35 +69,18 @@ async def long_translation():
 
 
 @app.post("/ml/classification/create", tags=["Create Router"])
-async def add_classification_router(endpoint_path: str, algorithm: ModelAlgorithm, dataset: UploadFile, label_name: str):
+async def add_classification_router(
+        endpoint_path: str,                      # Путь до обработчика пользователя
+        algorithm: ModelAlgorithm,               # Алгоритм машинного обучения
+        label_name: str,                         # Имя целевой переменной в dataset
+        background: BackgroundTasks,             # Создание и обучение алгоритма на задний фон
+        dataset: UploadFile = File(...),         # Данные, на которых обучается алгоритм
+):
     """
     Обработчик, который создает другие обработчики.
     """
-    # Создание алгоритма и его обучение
-    df = pd.read_csv(dataset.file)
-    df.dropna(inplace=True)
-    model = MODEL_MAP[algorithm](max_iter=1000)
-    feature_names = list(df.drop(columns=label_name))
-    schema = create_model('schema', **{name: (float, ...) for name in feature_names})
-    model.fit(pd.get_dummies(df[feature_names]), df[label_name])
-    model_in_file = f"src/weights/{datetime.datetime.now(datetime.UTC)}.sav"
-    joblib.dump(model, model_in_file)
-
-    # Обработчик, который будет создан клиентом
-    async def classification_endpoint(data: List[schema]):
-        input_df = pd.DataFrame(data)
-        input_df_encoded = pd.get_dummies(input_df, drop_first=True)
-        input_df_encoded = input_df_encoded.reindex(columns=model.feature_names_in_, fill_value=0)
-        return [
-            {
-                "predict_class": int(predict),
-                "probability": max(probability)
-            } for predict, probability in zip(model.predict(input_df_encoded), joblib.load(model_in_file).predict_proba(input_df_encoded))]
-
-    app.add_api_route(path=f"/{endpoint_path}", endpoint=classification_endpoint, methods=["POST"], tags=["ML-Routers"])
-    app.openapi_schema = None
+    background.add_task(create_clf_handler, endpoint_path, algorithm, deepcopy(dataset), label_name, app)
     return {
-        "message": "successful create classification handler",
-        "ml_algorithm": f"{model.__class__()}",
+        "message": "Обработчик создается в фоновом режиме.",
         "endpoint_path": f"/{endpoint_path}",
     }

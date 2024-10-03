@@ -110,9 +110,7 @@
                 responseDiv.innerHTML = `
                     <div class="px-4 py-2 border border-gray-300 rounded bg-white shadow">
                         <h2 class="font-bold">Ответ сервера:</h2>
-                        <p>Статус код: <span class="font-semibold">${statusCode} ${statusText}</span></p>
                         <p><strong>Сообщение:</strong> ${responseBody.message}</p>
-                        <p><strong>Алгоритм:</strong> ${responseBody.ml_algorithm}</p>
                         <p><strong>Путь конечной точки:</strong> <a href="${baseUrl}${responseBody.endpoint_path}" class="text-blue-600 hover:underline">${baseUrl}${responseBody.endpoint_path}</a></p>
                     </div>
                 `;
