@@ -6,3 +6,4 @@
 /alembic/versions/__pycache__/
 /.env/
 /spam.py
+/src/weights/
