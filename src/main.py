@@ -57,7 +57,6 @@ app.add_middleware(
 app.include_router(frontend_router)
 
 
-# Moc cache
 @app.get("/moc-transactions", tags=["Test cache"])
 @cache(expire=5)
 async def long_translation():
@@ -70,11 +69,11 @@ async def long_translation():
 
 @app.post("/ml/classification/create", tags=["Create Router"])
 async def add_classification_router(
-        endpoint_path: str,                      # Путь до обработчика пользователя
-        algorithm: ModelAlgorithm,               # Алгоритм машинного обучения
-        label_name: str,                         # Имя целевой переменной в dataset
-        background: BackgroundTasks,             # Создание и обучение алгоритма на задний фон
-        dataset: UploadFile = File(...),         # Данные, на которых обучается алгоритм
+        endpoint_path: str,               # Путь до обработчика пользователя
+        algorithm: ModelAlgorithm,        # Алгоритм машинного обучения
+        label_name: str,                  # Имя целевой переменной в dataset
+        background: BackgroundTasks,      # Создание и обучение алгоритма на задний фон
+        dataset: UploadFile = File(...)   # Данные, на которых обучается алгоритм
 ):
     """
     Обработчик, который создает другие обработчики.
