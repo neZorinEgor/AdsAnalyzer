@@ -3,18 +3,22 @@ from typing import List
 
 import joblib
 import pandas as pd
-from fastapi import UploadFile, FastAPI
+from fastapi import UploadFile, FastAPI, Depends
 from pydantic import create_model
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.database import get_session
 from src.handlers.classification.mapped import ModelAlgorithm, MODEL_MAP
+from src.handlers.classification.model import ClassificationHandlersModel
 
 
 async def create_clf_handler(
-        endpoint_path: str,          # Путь до обработчика пользователя
-        algorithm: ModelAlgorithm,   # Алгоритм машинного обучения
-        dataset: UploadFile,         # Данные, на которых обучается алгоритм
-        label_name: str,             # Имя целевой переменной в dataset,
-        app: FastAPI                 # Экземпляр сервера
+        endpoint_path: str,  # Путь до обработчика пользователя
+        algorithm: ModelAlgorithm,  # Алгоритм машинного обучения
+        dataset: UploadFile,  # Данные, на которых обучается алгоритм
+        label_name: str,  # Имя целевой переменной в dataset,
+        app: FastAPI,  # Экземпляр сервера
+        session: AsyncSession = Depends(get_session)
 ):
     # Обработка данных
     df = pd.read_csv(dataset.file)
@@ -28,6 +32,14 @@ async def create_clf_handler(
     model_in_file = f"src/weights/{datetime.datetime.now(datetime.UTC)}.sav"
     joblib.dump(model, model_in_file)
 
+    # Сохранение модели
+    clf_handler = ClassificationHandlersModel()
+    clf_handler.endpoint_path = endpoint_path
+    clf_handler.model_path = model_in_file
+    clf_handler.created_at = datetime.datetime.now(datetime.UTC)
+    session.add(clf_handler)
+    await session.commit()
+
     # Обработчик, который будет создан клиентом
     async def classification_endpoint(data: List[schema]):
         input_df = pd.DataFrame(data)
@@ -37,6 +49,8 @@ async def create_clf_handler(
             {
                 "predict_class": int(predict),
                 "probability": max(probability)
-            } for predict, probability in zip(model.predict(input_df_encoded), joblib.load(model_in_file).predict_proba(input_df_encoded))]
+            } for predict, probability in
+            zip(model.predict(input_df_encoded), joblib.load(model_in_file).predict_proba(input_df_encoded))]
+
     app.add_api_route(path=f"/{endpoint_path}", endpoint=classification_endpoint, methods=["POST"], tags=["ML-Routers"])
     app.openapi_schema = None

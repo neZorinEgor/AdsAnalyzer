@@ -17,7 +17,7 @@ if config.config_file_name is not None:
 # App weights
 from src.database import Base
 # Your weights here ↓
-# ...
+from src.handlers.classification.model import ClassificationHandlersModel
 
 target_metadata = Base.metadata
 
