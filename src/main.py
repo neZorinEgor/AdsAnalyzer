@@ -1,4 +1,3 @@
-import fastapi_users.router
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_cache.decorator import cache
 

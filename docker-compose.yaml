@@ -1,62 +1,62 @@
 version: "3"
 
 services:
-#  redis:
-#    image: redis:latest
-#    container_name: redis
-#    env_file:
-#      - .env
-#    expose:
-#      - ${REDIS_PORT}
-#    networks:
-#      - app-network
+  redis:
+    image: redis:latest
+    container_name: redis
+    env_file:
+      - .env
+    expose:
+      - ${REDIS_PORT}
+    networks:
+      - app-network
 
   mysql:
     image: mysql:latest
     container_name: mysql
     restart: always
-    ports:
-      - ${MYSQL_PORT}:${MYSQL_PORT}
+    expose:
+      - ${MYSQL_PORT}
     env_file:
       - .env
-#    healthcheck:
-#      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-#      interval: 15s
-#      timeout: 15s
-#      retries: 4
-#    networks:
-#      - app-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 15s
+      timeout: 15s
+      retries: 4
+    networks:
+      - app-network
 
-#  fastapi:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    container_name: fastapi
-#    restart: always
-#    expose:
-#      - ${APP_PORT}
-#    depends_on:
-#      mysql:
-#        condition: service_healthy
-#    command: bash -c "alembic upgrade head && uvicorn src.main:app --host ${APP_HOST} --port ${APP_PORT}"
-#    networks:
-#      - app-network
-#
-#  nginx:
-#    image: nginx:latest
-#    container_name: nginx
-#    restart: always
-#    depends_on:
-#      - fastapi
-#    ports:
-#      - ${NGINX_HTTP_PORT}:${NGINX_HTTP_PORT}
-#      - ${NGINX_HTTPS_PORT}:${NGINX_HTTPS_PORT}
-#    volumes:
-#      - ./nginx/conf.d:/etc/nginx/conf.d
-#    networks:
-#      - app-network
-#
-#
-#networks:
-#  app-network:
-#    driver: "bridge"
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fastapi
+    restart: always
+    expose:
+      - ${APP_PORT}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: bash -c "alembic upgrade head && uvicorn src.main:app --host ${APP_HOST} --port ${APP_PORT}"
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    depends_on:
+      - fastapi
+    ports:
+      - ${NGINX_HTTP_PORT}:${NGINX_HTTP_PORT}  # Порт для HTTP
+      - ${NGINX_HTTPS_PORT}:${NGINX_HTTPS_PORT}  # Порт для HTTPS
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/certs:/etc/nginx/certs  # Монтируем сертификаты
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: "bridge"
