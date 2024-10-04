@@ -3,13 +3,11 @@ from typing import List
 
 import joblib
 import pandas as pd
-from fastapi import UploadFile, FastAPI, Depends
+from fastapi import UploadFile, FastAPI
 from pydantic import create_model
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database import get_session
-from src.handlers.classification.mapped import ModelAlgorithm, MODEL_MAP
-from src.handlers.classification.model import ClassificationHandlersModel
+from src.handlers.mapped import ModelAlgorithm, MODEL_MAP
+from src.handlers.model import ClassificationHandlersModel
 
 
 async def create_clf_handler(
@@ -18,7 +16,7 @@ async def create_clf_handler(
         dataset: UploadFile,  # Данные, на которых обучается алгоритм
         label_name: str,  # Имя целевой переменной в dataset,
         app: FastAPI,  # Экземпляр сервера
-        session: AsyncSession = Depends(get_session)
+        session
 ):
     # Обработка данных
     df = pd.read_csv(dataset.file)
