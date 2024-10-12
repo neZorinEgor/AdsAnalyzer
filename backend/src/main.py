@@ -6,7 +6,6 @@ from src.user.router import router as user_router
 
 import time
 
-# app.include_router(frontend_router)
 app.include_router(classification_router)
 app.include_router(user_router)
 
