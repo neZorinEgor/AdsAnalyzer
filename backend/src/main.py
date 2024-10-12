@@ -1,7 +1,6 @@
 from fastapi_cache.decorator import cache
 
 from src.app import app
-from src.frontend.pages.router import router as frontend_router
 from src.ml_endpoint.router import router as classification_router
 from src.user.router import router as user_router
 
