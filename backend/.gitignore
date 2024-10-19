@@ -10,3 +10,5 @@
 /src/weights/*
 /src/algorithms.py
 /src/frontend/
+/src/user/keys/jwt-private.pem
+/src/user/keys/jwt-public.pem
