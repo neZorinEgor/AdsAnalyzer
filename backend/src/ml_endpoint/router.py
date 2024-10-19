@@ -8,10 +8,10 @@ from src.ml_endpoint.background import create_clf_handler
 from src.ml_endpoint.mapped import ModelAlgorithm
 from src.app import app
 
-router = APIRouter()
+router = APIRouter(tags=["Classifications-Handlers"])
 
 
-@router.post("/ml_endpoint/classification/create", tags=["Classifications-Handlers"])
+@router.post("/ml_endpoint/classification/create")
 async def create_clf_router(
         endpoint_path: str,                # Путь до обработчика пользователя
         algorithm: ModelAlgorithm,         # Алгоритм машинного обучения
@@ -26,15 +26,3 @@ async def create_clf_router(
         "endpoint_path": f"/{endpoint_path}",
     }
 
-
-@router.get("/ml_endpoint/classification")
-async def read_clf_routers():
-    ...
-
-
-@app.delete("/ml_endpoint/classification/{router_path}", tags=["Classifications-Handlers"])
-async def delete_clf_route(router_path: str):
-    app.router.routes = [route for route in app.router.routes if route.path != "/predict"]
-    app.openapi_schema = None
-    app.setup()
-    return {"message": f"Путь {router_path} удален."}

@@ -10,5 +10,8 @@ class RegisterUser(LoginUser):
     email: EmailStr
 
 
-
-
+class UserReadInfo(BaseModel):
+    username: str
+    register_at: str
+    email: EmailStr
+    id: int

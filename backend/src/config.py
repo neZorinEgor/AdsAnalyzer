@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
 
 
 class Settings(BaseSettings):
@@ -29,6 +33,18 @@ class Settings(BaseSettings):
     @property   # for cache
     def redis_url(self):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
+
+    @property
+    def jwt_private_key(self):
+        BASE_PATH = Path(__file__).parent.parent
+        private_key_path: Path = BASE_PATH / "src" / "user" / "keys" / "jwt-private.pem"
+        return private_key_path.read_text()
+
+    @property
+    def jwt_public_key(self):
+        BASE_PATH = Path(__file__).parent.parent
+        private_key_path: Path = BASE_PATH / "src" / "user" / "keys" / "jwt-public.pem"
+        return private_key_path.read_text()
 
     model_config = SettingsConfigDict(env_file=".env")
 
