@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div class="flex">
+    <!-- Sidebar -->
+    <div class="w-1/6 h-screen bg-white sticky top-0 py-4 px-6 border-r shadow-xl">
+      <a href="/" class="font-bold text-2xl">Логотип</a>
+      <nav class="list-none mt-4 space-y-2">
+        <a class="{% block create     %}{% endblock %}" href="/create" >Создать модель</a>
+        <a class="{% block my_backend %}{% endblock %}" href="/models" >Мои модели</a>
+        <a class="{% block manual     %}{% endblock %}" href="/manual" >Мануал</a>
+      </nav>
+    </div>
+
+    <!-- Main -->
+    <main class="w-5/6 p-4">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+</body>
+</html>

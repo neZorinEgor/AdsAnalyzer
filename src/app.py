@@ -1,5 +1,7 @@
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi_cache import FastAPICache
@@ -27,6 +29,7 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
 )
+app.mount("/static", StaticFiles(directory=Path("src/frontend/static")), name="static")
 
 
 # Origins url's for CORS

@@ -38,13 +38,15 @@ document.getElementById('create-handler-form').addEventListener('submit', async 
         responseDiv.innerHTML = `<p class="text-red-600">Ошибка: ${error.message}</p>`;
     }
 });
+
 function showNotification() {
     const notification = document.getElementById('notification');
-    notification.classList.remove('hidden'); // Показываем уведомление
+    notification.classList.remove('hidden');
     setTimeout(() => {
         notification.classList.add('hidden');
     }, 5000);
 }
+
 document.getElementById('dataset').addEventListener('change', (event) => {
     const fileName = event.target.files[0] ? event.target.files[0].name : 'Не выбран файл';
     document.getElementById('file-name').textContent = fileName;

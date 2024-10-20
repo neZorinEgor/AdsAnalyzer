@@ -1,4 +1,3 @@
-// init
 printText( document.getElementById( 'my-text' ) );
 
 function printText( el ){

@@ -1,7 +1,5 @@
 fastapi==0.111.0
 fastapi-cache2==0.2.1
-fastapi-users==13.0.0
-fastapi-users-db-sqlalchemy==6.0.1
 uvicorn==0.30.1
 alembic==1.13.1
 redis==4.6.0
