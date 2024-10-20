@@ -9,8 +9,3 @@ src/__pycache__/
 
 alembic/__pycache__/
 alembic/versions/__pycache__/
-
-/src/weights/*
-
-/src/user/keys/jwt-private.pem
-/src/user/keys/jwt-public.pem
