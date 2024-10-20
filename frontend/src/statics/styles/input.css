@@ -1,3 +1,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+/* 
+    Стили для навигационного меню 
+*/
+
+
+/* Cайдбар */
+@layer components {
+    .sidebar {
+    @apply top-0 py-4 px-6 border-r shadow-xl
+    }
+}
+
+/* Элементы сайдбара */
+@layer components {
+    .not-selected {
+      @apply p-2 transition hover:bg-gray-200 rounded block text-lg text-black hover:text-black
+    }
+  }
+
+@layer components {
+    .selected {
+      @apply p-2 transition bg-gray-200 rounded block text-lg text-black
+    }
+  }
+
+

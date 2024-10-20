@@ -28,6 +28,9 @@ async def logout(
     response: Response
 ):
     response.delete_cookie("TrainMeJWT")
+    return {
+        "msg": "Goodbye!"
+    }
 
 
 @router.post("/auth/register", status_code=status.HTTP_200_OK, tags=["Auth"])

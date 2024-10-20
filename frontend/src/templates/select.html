@@ -8,13 +8,12 @@
 <body>
   <div class="flex">
     <!-- Sidebar -->
-    <div class="w-1/6 h-screen bg-white sticky top-0 py-4 px-6 border-r shadow-xl">
+    <div class="w-1/6 h-screen bg-white sticky sidebar">
       <a href="/src/templates/index.html" class="font-bold text-2xl">Logo</a>
-      
       <nav class="list-none mt-4 space-y-2">
-        <a href="#" class="p-2 transition bg-gray-100 rounded block text-lg text-[#334155] text-black">Create model</a>
-        <a href="#" class="p-2 transition hover:bg-gray-100 rounded block text-lg text-[#334155] hover:text-black">My backend</a>
-        <a href="/src/templates/manual.html" class="p-2 transition hover:bg-gray-100 rounded block text-lg text-[#334155] hover:text-black">Manual</a>
+          <a class="selected" href="#">Create model</a>
+          <a class="not-selected" href="#">My backend</a>
+          <a class="not-selected" href="/src/templates/manual.html">Manual</a>
       </nav>
     </div>
   
@@ -24,7 +23,7 @@
         <script type="text/javascript" src="/src/statics/scripts/text_animation.js"></script>
         <nav class="flex flex-row mt-4 space-x-4">
           <!-- Card -->
-          <a href="#" class="p-4 bg-[#1f2937] rounded w-1/6 transition-transform transform hover:shadow-lg hover:-translate-y-2">
+          <a href="/src/templates/classification.html" class="p-4 bg-[#1f2937] rounded w-1/6 transition-transform transform hover:shadow-lg hover:-translate-y-2">
             <h1 class="text-center text-lg text-white font-bold">Классификация</h1>
             <p class="mt-2 text-center text-white">Метод классификации используется для определения категории, к которой принадлежит новый объект на основе обучающей выборки.</p>
           </a>

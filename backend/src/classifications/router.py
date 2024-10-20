@@ -4,8 +4,8 @@ from fastapi import APIRouter, UploadFile, File, BackgroundTasks, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_session
-from src.ml_endpoint.background import create_clf_handler
-from src.ml_endpoint.mapped import ModelAlgorithm
+from src.classifications.background import create_clf_handler
+from src.classifications.mapped import ModelAlgorithm
 from src.app import app
 
 router = APIRouter(tags=["Classifications-Handlers"])

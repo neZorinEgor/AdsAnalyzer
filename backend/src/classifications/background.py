@@ -6,8 +6,8 @@ import pandas as pd
 from fastapi import UploadFile, FastAPI
 from pydantic import create_model
 
-from src.ml_endpoint.mapped import ModelAlgorithm, MODEL_MAP
-from src.ml_endpoint.model import ClassificationHandlersModel
+from src.classifications.mapped import ModelAlgorithm, MODEL_MAP
+from src.classifications.model import ClassificationHandlersModel
 
 
 async def create_clf_handler(
