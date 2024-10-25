@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database import get_session
 from src.classifications.background import create_clf_handler
 from src.classifications.mapped import ModelAlgorithm
-from src.app import app
+from src.instance import app
 
 router = APIRouter(tags=["Classifications-Handlers"])
 

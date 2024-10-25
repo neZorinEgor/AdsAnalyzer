@@ -7,7 +7,7 @@ document.getElementById('create-handler-form').addEventListener('submit', async 
     const baseUrl = window.location.origin;
 
     try {
-        const response = await fetch(`http://127.0.0.1:8000/ml_endpoint/classification/create?endpoint_path=${encodeURIComponent(event.target.endpoint_path.value)}&algorithm=${encodeURIComponent(event.target.algorithm.value)}&label_name=${encodeURIComponent(event.target.label_name.value)}`, {
+        const response = await fetch(`http://0.0.0.0:5000/ml_endpoint/classification/create?endpoint_path=${encodeURIComponent(event.target.endpoint_path.value)}&algorithm=${encodeURIComponent(event.target.algorithm.value)}&label_name=${encodeURIComponent(event.target.label_name.value)}`, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',

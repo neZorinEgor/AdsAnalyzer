@@ -11,6 +11,24 @@ services:
     networks:
       - app-network
 
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    env_file:
+      - .env
+    ports:
+      - ${S3_PORT}:${S3_PORT}
+    environment:
+      - SERVICES=s3
+      - DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${S3_SECRET_KEY}
+      - EDGE_PORT=${S3_PORT}
+    volumes:
+      - localstack-data:/var/lib/localstack
+    networks:
+      - app-network
+
   mysql:
     image: mysql:latest
     container_name: mysql
@@ -33,8 +51,8 @@ services:
       dockerfile: Dockerfile
     container_name: fastapi
     restart: always
-    expose:
-      - ${APP_PORT}
+    ports:
+      - ${APP_PORT}:${APP_PORT}
     depends_on:
       mysql:
         condition: service_healthy
@@ -42,31 +60,23 @@ services:
     networks:
       - app-network
 
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    restart: always
-    depends_on:
-      - fastapi
-    ports:
-      - ${NGINX_HTTP_PORT}:${NGINX_HTTP_PORT}  # Порт для HTTP
-      - ${NGINX_HTTPS_PORT}:${NGINX_HTTPS_PORT}  # Порт для HTTPS
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/certs:/etc/nginx/certs  # Монтируем сертификаты
-    networks:
-      - app-network
+#  nginx:
+#    image: nginx:latest
+#    container_name: nginx
+#    restart: always
+#    depends_on:
+#      - fastapi
+#    ports:
+#      - ${NGINX_HTTP_PORT}:${NGINX_HTTP_PORT}  # Порт для HTTP
+#      - ${NGINX_HTTPS_PORT}:${NGINX_HTTPS_PORT}  # Порт для HTTPS
+#    volumes:
+#      - ./nginx/conf.d:/etc/nginx/conf.d
+#      - ./nginx/certs:/etc/nginx/certs  # Монтируем сертификаты
+#    networks:
+#      - app-network
 
-#  s3:
-#    image: localstack/localstack
-#    container_name: s3
-#    expose:
-#      - ${S3_PORT}
-#    environment:
-#      - SERVICES=s3
-#      - DEFAULT_REGION=us-east-1
-#      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-#      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+volumes:
+  localstack-data:
 
 networks:
   app-network:

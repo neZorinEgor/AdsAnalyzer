@@ -11,26 +11,24 @@ from src.classifications.model import ClassificationHandlersModel
 
 
 async def create_clf_handler(
-        endpoint_path: str,  # Путь до обработчика пользователя
-        algorithm: ModelAlgorithm,  # Алгоритм машинного обучения
-        dataset: UploadFile,  # Данные, на которых обучается алгоритм
-        label_name: str,  # Имя целевой переменной в dataset,
-        app: FastAPI,  # Экземпляр сервера
-        session
+        endpoint_path: str,  # Path to the user handler
+        algorithm: ModelAlgorithm,  # Machine learning algorithm
+        dataset: UploadFile,  # Dataset for training the algorithm
+        label_name: str,  # Target variable name in the dataset
+        app: FastAPI,  # Server instance
+        session  # Database session or other session object
 ):
-    # Обработка данных
+    # Dataset preprocessing
     df = pd.read_csv(dataset.file)
     df.dropna(inplace=True)
     feature_names = list(df.drop(columns=label_name))
     schema = create_model('schema', **{name: (float, ...) for name in feature_names})
-
-    # Создание алгоритма и его обучение
+    # Create and supervised algorithm
     model = MODEL_MAP[algorithm](max_iter=1000)
     model.fit(pd.get_dummies(df[feature_names]), df[label_name])
     model_in_file = f"src/weights/{datetime.datetime.now(datetime.UTC)}.sav"
     joblib.dump(model, model_in_file)
-
-    # Сохранение модели
+    # Save algorithm
     clf_handler = ClassificationHandlersModel()
     clf_handler.endpoint_path = endpoint_path
     clf_handler.model_path = model_in_file
@@ -38,7 +36,7 @@ async def create_clf_handler(
     session.add(clf_handler)
     await session.commit()
 
-    # Обработчик, который будет создан клиентом
+    # Create model handler
     async def classification_endpoint(data: List[schema]):
         input_df = pd.DataFrame(data)
         input_df_encoded = pd.get_dummies(input_df, drop_first=True)

@@ -1,6 +1,6 @@
 import datetime
 
-from src.config import settings
+from src.settings import settings
 from sqlalchemy import select
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError

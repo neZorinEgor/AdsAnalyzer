@@ -10,7 +10,7 @@ from src.user.service import AuthService
 router = APIRouter()
 
 
-@router.post("/auth/login", status_code=status.HTTP_200_OK, tags=["Auth"])
+@router.post("/user/login", status_code=status.HTTP_200_OK, tags=["Auth"])
 async def login(
         response: Response,
         user_credentials: LoginUser,
@@ -23,7 +23,7 @@ async def login(
     }
 
 
-@router.post("/auth/logout", status_code=status.HTTP_200_OK, tags=["Auth"])
+@router.post("/user/logout", status_code=status.HTTP_200_OK, tags=["Auth"])
 async def logout(
     response: Response
 ):
@@ -33,7 +33,7 @@ async def logout(
     }
 
 
-@router.post("/auth/register", status_code=status.HTTP_200_OK, tags=["Auth"])
+@router.post("/user/register", status_code=status.HTTP_200_OK, tags=["Auth"])
 async def register(
         create_user_schema: RegisterUser,
         session: AsyncSession = Depends(get_session),

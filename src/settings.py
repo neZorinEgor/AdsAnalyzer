@@ -3,24 +3,29 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-
-
 class Settings(BaseSettings):
+    # proxy
     NGINX_HTTP_PORT: str
     NGINX_HTTPS_PORT: str
-
+    # application
     APP_HOST: str
     APP_PORT: str
-
+    # cache
     REDIS_HOST: str
     REDIS_PORT: str
-
+    # relation database
     MYSQL_HOST: str
     MYSQL_PORT: str
     MYSQL_USER: str
     MYSQL_DATABASE: str
     MYSQL_PASSWORD: str
     MYSQL_ROOT_PASSWORD: str
+    # S3 `object` storage
+    S3_ACCESS_KEY: str
+    S3_SECRET_KEY: str
+    S3_BUCKET_NAME: str
+    S3_PORT: str
+    S3_HOST: str
 
     @property   # for migration
     def mysql_url(self):

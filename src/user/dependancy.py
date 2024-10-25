@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import Cookie
 import jwt
 
-from src.config import settings
+from src.settings import settings
 from src.user.exceptions import token_not_founded_exception, bad_token_exception
 from src.user.schema import UserReadInfo
 from src.user.utils import decode_jwt
