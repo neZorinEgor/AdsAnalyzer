@@ -49,18 +49,6 @@ class Settings(BaseSettings):
     def redis_url(self):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
 
-    @property
-    def jwt_private_key(self):
-        BASE_PATH = Path(__file__).parent.parent
-        private_key_path: Path = BASE_PATH / "src" / "auth" / "certs" / "jwt-private.pem"
-        return private_key_path.read_text()
-
-    @property
-    def jwt_public_key(self):
-        BASE_PATH = Path(__file__).parent.parent
-        private_key_path: Path = BASE_PATH / "src" / "auth" / "certs" / "jwt-public.pem"
-        return private_key_path.read_text()
-
     model_config = SettingsConfigDict(env_file=".env")
 
 

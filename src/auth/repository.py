@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 from src.auth.contract import ABCAuthRepository
 from src.auth.exceptions import UserByThisEmailAlreadyExistException, InvalidCredentialsException
@@ -7,6 +8,8 @@ from src.auth.schema import RegisterUserSchema, LoginUserSchema, UserCredentials
 from src.database import session_factory
 from sqlalchemy import select
 from src.auth.utils import hash_password, check_password
+
+logger = logging.getLogger("auth.repository")
 
 
 class AuthRepositoryImpl(ABCAuthRepository):
@@ -20,6 +23,7 @@ class AuthRepositoryImpl(ABCAuthRepository):
             exist_user = await session.execute(exist_user_query)
             exist_user = exist_user.scalar_one_or_none()
             if exist_user:
+                logger.error(f"Try register {register_user.email}, but already exist.")
                 raise UserByThisEmailAlreadyExistException
             # Saving the user
             user = UserModel(
@@ -27,6 +31,7 @@ class AuthRepositoryImpl(ABCAuthRepository):
                 password=hash_password(register_user.password),
                 register_at=datetime.datetime.now(datetime.UTC)
             )
+            logger.info(f"Successful save new user {register_user.email}")
             session.add(user)
             await session.commit()
             return user.id
@@ -41,7 +46,9 @@ class AuthRepositoryImpl(ABCAuthRepository):
             exist_user = await session.execute(exist_user_query)
             exist_user = exist_user.scalar_one_or_none()
             # Compare input password and saved password
-            if not exist_user or not check_password(login_user.password, hash_password(login_user.password)):
+            if not exist_user or not check_password(login_user.password, hash_password(exist_user.password)):
+                logger.error("Try login by invalid credentials.")
                 raise InvalidCredentialsException
+            logger.info(f"{login_user.email} successful login.")
             return UserCredentialsSchema(id=exist_user.id, email=exist_user.email)
 
