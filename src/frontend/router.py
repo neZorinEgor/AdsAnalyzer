@@ -6,8 +6,6 @@ from fastapi import Request
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.instance import app
-from src.user.dependancy import get_user_credentials_from_token
-from src.user.schema import UserReadInfo
 
 router = APIRouter(tags=["Frontend"])
 

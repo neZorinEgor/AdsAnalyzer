@@ -5,6 +5,6 @@ src/***/__pycache__/
 alembic/__pycache__/
 alembic/versions/__pycache__/
 
-/src/user/keys/jwt-private.pem
-/src/user/keys/jwt-public.pem
+/src/auth/certs/jwt-private.pem
+/src/auth/certs/jwt-public.pem
 /src/weights/*

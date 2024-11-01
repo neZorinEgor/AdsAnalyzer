@@ -2,8 +2,18 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+BASE_DIR = Path(__file__).parent
+
+
+class Auth:
+    private_jwt_key_path: Path = BASE_DIR / "auth" / "certs" / "jwt-private.pem"
+    public_jwt_key_path: Path = BASE_DIR / "auth" / "certs" / "jwt-public.pem"
+    algorithm: str = "RS256"
+    access_token_expire_minutes: int = 120
+
 
 class Settings(BaseSettings):
+    auth: Auth = Auth()
     # proxy
     NGINX_HTTP_PORT: str
     NGINX_HTTPS_PORT: str
@@ -42,13 +52,13 @@ class Settings(BaseSettings):
     @property
     def jwt_private_key(self):
         BASE_PATH = Path(__file__).parent.parent
-        private_key_path: Path = BASE_PATH / "src" / "user" / "keys" / "jwt-private.pem"
+        private_key_path: Path = BASE_PATH / "src" / "auth" / "certs" / "jwt-private.pem"
         return private_key_path.read_text()
 
     @property
     def jwt_public_key(self):
         BASE_PATH = Path(__file__).parent.parent
-        private_key_path: Path = BASE_PATH / "src" / "user" / "keys" / "jwt-public.pem"
+        private_key_path: Path = BASE_PATH / "src" / "auth" / "certs" / "jwt-public.pem"
         return private_key_path.read_text()
 
     model_config = SettingsConfigDict(env_file=".env")

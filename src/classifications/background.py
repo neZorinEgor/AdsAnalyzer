@@ -11,7 +11,7 @@ from src.classifications.model import ClassificationHandlersModel
 
 
 async def create_clf_handler(
-        endpoint_path: str,  # Path to the user handler
+        endpoint_path: str,  # Path to the auth handler
         algorithm: ModelAlgorithm,  # Machine learning algorithm
         dataset: UploadFile,  # Dataset for training the algorithm
         label_name: str,  # Target variable name in the dataset

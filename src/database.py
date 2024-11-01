@@ -27,6 +27,7 @@ async def get_session() -> AsyncSession:
 
 str_50 = Annotated[str, 50]
 str_128 = Annotated[str, 128]
+str_255 = Annotated[str, 255]
 
 
 class Base(DeclarativeBase):
@@ -34,5 +35,6 @@ class Base(DeclarativeBase):
         type_annotation_map={
             str_50: String(50),
             str_128: String(128),
+            str_255: String(255)
         }
     )

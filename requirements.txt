@@ -14,3 +14,4 @@ pandas==2.2.3
 joblib==1.4.2
 pyjwt==2.8.0
 aiobotocore==2.15.2
+bcrypt==4.2.0
