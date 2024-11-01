@@ -7,17 +7,16 @@
 </head>
 <body>
   <div class="flex">
-    <!-- Sidebar -->
+    {# Sidebar #}
     <div class="w-1/6 h-screen bg-white sticky top-0 py-4 px-6 border-r shadow-xl">
       <a href="/" class="font-bold text-2xl">Логотип</a>
       <nav class="list-none mt-4 space-y-2">
-        <a class="{% block create     %}{% endblock %}" href="/create" >Создать модель</a>
-        <a class="{% block my_backend %}{% endblock %}" href="/models" >Мои модели</a>
-        <a class="{% block manual     %}{% endblock %}" href="/manual" >Мануал</a>
+        <a class="{% if request.path in ['/models', '/create', '/create/classifications', '/create/clusterizations', '/create/regressions'] %}p-2 transition bg-gray-200 rounded block text-lg text-black{% else %}p-2 transition hover:bg-gray-200 rounded block text-lg text-black hover:text-black{% endif %}" href="/models" >Мои модели</a>
+        <a class="{% if request.path == '/manual' %}p-2 transition bg-gray-200 rounded block text-lg text-black{% else %}p-2 transition hover:bg-gray-200 rounded block text-lg text-black hover:text-black{% endif %}" href="/manual" >Мануал</a>
       </nav>
     </div>
 
-    <!-- Main -->
+    {# Main #}
     <main class="w-5/6 p-4">
         {% block content %}{% endblock %}
     </main>

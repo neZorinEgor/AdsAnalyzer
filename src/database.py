@@ -1,14 +1,14 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase,  registry
 from sqlalchemy import String
-from src.config import settings
+from src.settings import settings
 from typing import Annotated
 
 
 # Async engin connector
 engine = create_async_engine(
     url=settings.mysql_async_url,
-    echo=True,
+    echo=False,
 )
 
 # Factory pattern
@@ -27,6 +27,7 @@ async def get_session() -> AsyncSession:
 
 str_50 = Annotated[str, 50]
 str_128 = Annotated[str, 128]
+str_255 = Annotated[str, 255]
 
 
 class Base(DeclarativeBase):
@@ -34,5 +35,6 @@ class Base(DeclarativeBase):
         type_annotation_map={
             str_50: String(50),
             str_128: String(128),
+            str_255: String(255)
         }
     )

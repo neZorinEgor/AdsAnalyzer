@@ -1,26 +1,23 @@
 {% extends 'components/base.html' %}
 
 {% block title%}TrainMe | Create{% endblock %}
-{% block create     %}p-2 transition bg-gray-200 rounded block text-lg text-black{% endblock %}
-{% block my_backend %}p-2 transition hover:bg-gray-200 rounded block text-lg text-black hover:text-black{% endblock %}
-{% block manual     %}p-2 transition hover:bg-gray-200 rounded block text-lg text-black hover:text-black{% endblock %}
 
 
 {% block content %}
 <h1 class="text-2xl font-bold">Создайте модель машинного обучения для своей задачи</h1>
         <nav class="flex flex-row mt-4 space-x-4">
           <!-- Card -->
-          <a href="/create/classifications" class="p-4 bg-[#1f2937] rounded w-1/6 transition-transform transform hover:shadow-lg hover:-translate-y-2">
+          <a href="/create/classifications" class="container p-4 bg-[#1f2937] rounded w-1/6 transition-transform transform hover:shadow-lg hover:-translate-y-2">
             <h1 class="text-center text-lg text-white font-bold">Классификация</h1>
             <p class="mt-2 text-center text-white">Метод классификации используется для определения категории, к которой принадлежит новый объект на основе обучающей выборки.</p>
           </a>
           <!-- Card -->
-          <a href="/create/clusterizations" class="p-4 bg-[#1f2937] rounded w-1/6 transition-transform transform hover:shadow-lg hover:-translate-y-2">
+          <a href="/create/clusterizations" class="container p-4 bg-[#1f2937] rounded w-1/6 transition-transform transform hover:shadow-lg hover:-translate-y-2">
             <h1 class="text-center text-lg text-white font-bold">Кластерный анализ</h1>
             <p class="mt-2 text-center text-white">Кластерный анализ позволяет группировать объекты на основе их схожести без предварительных меток.</p>
           </a>
           <!-- Card -->
-          <a href="/create/regressions" class="p-4 bg-[#1f2937] rounded w-1/6 transition-transform transform hover:shadow-lg hover:-translate-y-2">
+          <a href="/create/regressions" class="container p-4 bg-[#1f2937] rounded w-1/6 transition-transform transform hover:shadow-lg hover:-translate-y-2">
             <h1 class="text-center text-lg text-white font-bold">Регрессионный анализ</h1>
             <p class="mt-2 text-center text-white">Регрессионный анализ используется для предсказания вещественных значений: стоимости недвижимости, акций и тп.</p>
           </a>

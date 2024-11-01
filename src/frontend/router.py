@@ -1,8 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.templating import Jinja2Templates
-from fastapi import Request
 from pathlib import Path
+from fastapi.responses import JSONResponse
+from fastapi import Request
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from src.instance import app
 
 router = APIRouter(tags=["Frontend"])
 
