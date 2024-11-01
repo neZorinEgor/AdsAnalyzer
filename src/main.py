@@ -13,20 +13,20 @@ app.include_router(frontend_router)
 app.include_router(classification_router)
 
 
-@app.get("/moc-transactions", tags=["TestUtils"])
-@cache(expire=5)
-async def long_translation():
-    await asyncio.sleep(5)
-    return {
-        "ok": True,
-        "message": "Successful test cache at long operations"
-    }
+# @app.get("/moc-transactions", tags=["TestUtils"])
+# @cache(expire=5)
+# async def long_translation():
+#     await asyncio.sleep(5)
+#     return {
+#         "ok": True,
+#         "message": "Successful test cache at long operations"
+#     }
 
 
-@app.post("/test/upload", tags=["TestUtils"])
-async def upload(file: UploadFile):
-    await s3_client.upload_file(file)
-    return {
-        "ok": True,
-        "message": f"Successful upload file {file.filename}"
-    }
+# @app.post("/test/upload", tags=["TestUtils"])
+# async def upload(file: UploadFile):
+#     await s3_client.upload_file(file)
+#     return {
+#         "ok": True,
+#         "message": f"Successful upload file {file.filename}"
+#     }

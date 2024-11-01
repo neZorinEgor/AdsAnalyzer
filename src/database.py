@@ -8,7 +8,7 @@ from typing import Annotated
 # Async engin connector
 engine = create_async_engine(
     url=settings.mysql_async_url,
-    echo=True,
+    echo=False,
 )
 
 # Factory pattern

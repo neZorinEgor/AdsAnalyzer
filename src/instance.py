@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, UploadFile
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
@@ -7,8 +9,6 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
 from starlette.middleware.cors import CORSMiddleware
-
-from src.s3.client import s3_client
 from src.settings import settings
 
 
@@ -16,14 +16,18 @@ from src.settings import settings
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
     # Initialize cache and file storage
-    redis = aioredis.from_url(settings.redis_url)
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    # redis = aioredis.from_url(settings.redis_url)
+    # FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
     # await s3_client.create_bucket()
     # await s3_client.upload_file("docker-compose.yaml")
     yield
     # Shutdown
-    await redis.close()
+    # await redis.close()
     # await s3_client.close()
+
+# Logging configurations
+logging.basicConfig(level=logging.INFO, format='%(levelname)s:     %(asctime)s     %(name)s     %(message)s')
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI(
@@ -37,17 +41,12 @@ app.mount("/static", StaticFiles(directory=Path("src/frontend/static")), name="s
 
 # Origins url's for CORS
 origins = [
-    "http://127.0.0.1:5000",
-    "https://127.0.0.1:5000",
-
-    "http://0.0.0.0:5000",
-    "https://0.0.0.0:5000",
-
-    "http://localhost:5000",
-    "https://localhost:5000",
-
-    "http://0.0.0.0:5000/ml_endpoint/classification/",
-    "https://0.0.0.0:5000/ml_endpoint/classification/",
+    "http://127.0.0.1:8000",
+    "https://127.0.0.1:8000",
+    "http://0.0.0.0:8000",
+    "https://0.0.0.0:8000",
+    "http://localhost:8000",
+    "https://localhost:8000",
 ]
 
 # Cors settings

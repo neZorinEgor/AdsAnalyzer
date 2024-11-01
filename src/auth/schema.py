@@ -1,3 +1,5 @@
+import datetime
+
 from pydantic import BaseModel, EmailStr, conbytes, constr
 
 
@@ -14,6 +16,23 @@ class RegisterUserSchema(UserSchema):
     pass
 
 
-class JWTTokenInfoSchema(BaseModel):
+class UserCredentialsSchema(BaseModel):
+    id: int
+    email: EmailStr
+
+
+class UserSuccessfulRegisterMessage(BaseModel):
+    message: str
+    register_user_id: int
+
+
+class DecodeAccessTokenSchema(BaseModel):
+    sub: int
+    email: EmailStr
+    exp: int | float
+    iat: int | float
+
+
+class JWTTokenInfo(BaseModel):
     access_token: str
     token_type: str

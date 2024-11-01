@@ -1,12 +1,12 @@
 import datetime
 
 from src.auth.contract import ABCAuthRepository
-from src.auth.exceptions import UserByThisEmailAlreadyExistException
+from src.auth.exceptions import UserByThisEmailAlreadyExistException, InvalidCredentialsException
 from src.auth.model import UserModel
-from src.auth.schema import JWTTokenInfoSchema, RegisterUserSchema
+from src.auth.schema import RegisterUserSchema, LoginUserSchema, UserCredentialsSchema
 from src.database import session_factory
 from sqlalchemy import select
-from src.auth.utils import hash_password
+from src.auth.utils import hash_password, check_password
 
 
 class AuthRepositoryImpl(ABCAuthRepository):
@@ -31,5 +31,17 @@ class AuthRepositoryImpl(ABCAuthRepository):
             await session.commit()
             return user.id
 
-    async def login(self) -> JWTTokenInfoSchema:
-        pass
+    async def login(self, login_user: LoginUserSchema) -> UserCredentialsSchema:
+        """
+        Find user and compare this credentials
+        """
+        async with session_factory() as session:
+            # Checking if the user exists
+            exist_user_query = select(UserModel).where(UserModel.email == login_user.email)
+            exist_user = await session.execute(exist_user_query)
+            exist_user = exist_user.scalar_one_or_none()
+            # Compare input password and saved password
+            if not exist_user or not check_password(login_user.password, hash_password(login_user.password)):
+                raise InvalidCredentialsException
+            return UserCredentialsSchema(id=exist_user.id, email=exist_user.email)
+

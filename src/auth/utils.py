@@ -12,6 +12,9 @@ def encode_jwt(
         algorithm: str = settings.auth.algorithm,
         expire_minutes: int = settings.auth.access_token_expire_minutes
 ):
+    """
+    Encode JWT token by long private key
+    """
     now = datetime.datetime.now(datetime.UTC)
     to_encode = payload.copy()
     to_encode.update(
@@ -26,13 +29,22 @@ def decode_jwt(
         public_key: str = settings.auth.public_jwt_key_path.read_text(),
         algorithm: str = settings.auth.algorithm
 ):
+    """
+    Decode JWT token by public key
+    """
     return jwt.decode(jwt=jwt_token, key=public_key, algorithms=[algorithm], options={"verify_exp": True})
 
 
 def hash_password(password: str) -> bytes:
+    """
+    Hash password by algorithm + salt
+    """
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(password.encode(), salt=salt)
 
 
 def check_password(password: str, hashed_password: bytes) -> bool:
+    """
+    Compare input password and hash
+    """
     return bcrypt.checkpw(password.encode(), hashed_password)
