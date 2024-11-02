@@ -5,7 +5,7 @@ from sqlalchemy.orm import mapped_column, Mapped
 
 
 class UserModel(Base):
-    __tablename__ = "auth"
+    __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
     email: Mapped[str_50] = mapped_column(nullable=False, unique=True)

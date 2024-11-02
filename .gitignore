@@ -1,7 +1,7 @@
 frontend_old/
 .venv/
 .idea/
-src/***/__pycache__/
+**/__pycache__/
 alembic/__pycache__/
 alembic/versions/__pycache__/
 
