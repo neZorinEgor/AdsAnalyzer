@@ -1,5 +1,4 @@
 import asyncio
-from src.classifications.router import router as classification_router
 from src.instance import app
 from src.s3.client import s3_client
 from src.frontend.router import router as frontend_router
@@ -11,7 +10,6 @@ from src.clusterization.router import router as clusterization_router
 
 app.include_router(auth_router)
 app.include_router(frontend_router)
-app.include_router(classification_router)
 app.include_router(clusterization_router)
 
 

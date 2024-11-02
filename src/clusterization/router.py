@@ -10,14 +10,14 @@ router = APIRouter(prefix="/ml/clusterizations")
 
 
 @router.post("/create")
-async def create_clusterizations_model(
+async def create_clusterization_model(
         endpoint_path: str,
         dataset: UploadFile = File(...),
         user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.not_banned_user),
 ):
     # Dataset preprocessing
-    df = pd.read_csv(dataset.file)
-    df.dropna(inplace=True)
+    data_frame = pd.read_csv(dataset.file)
+    data_frame.dropna(inplace=True)
     ...
 
     async def create_clusterization_endpoint():

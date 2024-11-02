@@ -18,7 +18,7 @@ if config.config_file_name is not None:
 from src.database import Base
 # Your weights here ↓
 from src.auth.model import UserModel
-from src.classifications.model import ClassificationHandlersModel
+
 
 target_metadata = Base.metadata
 
