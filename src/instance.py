@@ -31,10 +31,11 @@ logger = logging.getLogger(__name__)
 
 
 app = FastAPI(
-    title="TrainMe",
-    description="`No-code' platform for automating the process of building and deploying machine learning models",
+    title="TrainMe 📚",
+    description="`No-code` platform for automating the process of building and deploying machine learning models",
     lifespan=lifespan,
     docs_url="/docs",
+    version="1.0.0"
 )
 app.mount("/static", StaticFiles(directory=Path("src/frontend/static")), name="static")
 

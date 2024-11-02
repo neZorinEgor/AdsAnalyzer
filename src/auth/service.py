@@ -16,6 +16,8 @@ class AuthService:
         jwt_payload = {
             "sub": user_credentials.id,
             "email": user_credentials.email,
+            "is_banned": user_credentials.is_banned,
+            "is_superuser": user_credentials.is_superuser
         }
         token = encode_jwt(payload=jwt_payload)
         return JWTTokenInfo(access_token=token, token_type="Bearer")

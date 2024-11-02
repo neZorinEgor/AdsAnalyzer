@@ -19,6 +19,8 @@ class RegisterUserSchema(UserSchema):
 class UserCredentialsSchema(BaseModel):
     id: int
     email: EmailStr
+    is_banned: bool
+    is_superuser: bool
 
 
 class UserSuccessfulRegisterMessage(BaseModel):
@@ -26,11 +28,13 @@ class UserSuccessfulRegisterMessage(BaseModel):
     register_user_id: int
 
 
-class DecodeAccessTokenSchema(BaseModel):
+class UserTokenPayloadSchema(BaseModel):
+    iat: int | float
+    exp: int | float
     sub: int
     email: EmailStr
-    exp: int | float
-    iat: int | float
+    is_banned: bool
+    is_superuser: bool
 
 
 class JWTTokenInfo(BaseModel):

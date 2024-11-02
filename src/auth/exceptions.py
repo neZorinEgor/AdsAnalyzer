@@ -20,3 +20,18 @@ ExpiredTokenException = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Token has expired."
 )
+
+UserIsBlockedException = HTTPException(
+    status_code=status.HTTP_403_FORBIDDEN,
+    detail="User is blocked."
+)
+
+UserIsNotSuperException = HTTPException(
+    status_code=status.HTTP_403_FORBIDDEN,
+    detail="Permission denied."
+)
+
+UnexpectedProblemException = HTTPException(
+    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    detail="There may be a problem. Please try again later."
+)

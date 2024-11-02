@@ -12,3 +12,4 @@ class UserModel(Base):
     password: Mapped[str_255] = mapped_column(nullable=False, unique=False, )
     register_at: Mapped[datetime.datetime] = mapped_column(nullable=False, default=datetime.datetime.now(datetime.UTC))
     is_banned: Mapped[bool] = mapped_column(default=False, nullable=False)
+    is_superuser: Mapped[bool] = mapped_column(default=False, nullable=False)

@@ -1,13 +1,18 @@
 import logging
 from fastapi import APIRouter, Depends
-from src.auth.dependency import get_user
+from src.auth.dependency import AuthDependency
 
 from src.auth.repository import AuthRepositoryImpl
-from src.auth.schema import LoginUserSchema, RegisterUserSchema, UserSuccessfulRegisterMessage, JWTTokenInfo, \
-    DecodeAccessTokenSchema
 from src.auth.service import AuthService
+from src.auth.schema import (
+    JWTTokenInfo,
+    LoginUserSchema,
+    RegisterUserSchema,
+    UserTokenPayloadSchema,
+    UserSuccessfulRegisterMessage,
+)
 
-router = APIRouter(prefix="/auth/jwt", tags=["JWTAuth"])
+router = APIRouter(prefix="/auth/jwt", tags=["JWT-Auth"])
 logger = logging.getLogger("auth.router")
 
 
@@ -39,8 +44,8 @@ async def forgot_password():
     return "TODO"
 
 
-@router.get("/get_my_credentials", response_model=DecodeAccessTokenSchema, status_code=200)
-async def get_my_credentials(user_credentials: DecodeAccessTokenSchema = Depends(get_user)):
+@router.get("/get_my_credentials", response_model=UserTokenPayloadSchema, status_code=200)
+async def get_my_credentials(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.not_banned_user)):
     """
     Example check access jwt token info
     """
