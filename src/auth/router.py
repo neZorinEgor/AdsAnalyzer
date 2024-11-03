@@ -24,8 +24,8 @@ async def register(
     Endpoint for register user and save this credentials in database
     """
     logger.info(f"Received register request for {register_user.email}")
-    register_user_id = await AuthService(AuthRepositoryImpl).register(register_user)
-    return UserSuccessfulRegisterMessage(message="Successful register user", register_user_id=register_user_id)
+    new_user_id = await AuthService(AuthRepositoryImpl).register(register_user)
+    return UserSuccessfulRegisterMessage(message="Successful register user", register_user_id=new_user_id)
 
 
 @router.post("/login", response_model=JWTTokenInfo, status_code=200)
@@ -44,8 +44,8 @@ async def forgot_password():
     return "TODO"
 
 
-@router.get("/me", response_model=UserTokenPayloadSchema, status_code=200)
-async def get_my_credentials(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.not_banned_user)):
+@router.get(path="/me", response_model=UserTokenPayloadSchema, status_code=200)
+async def get_my_credentials(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.super_user)):
     """
     Example check access jwt token info
     """

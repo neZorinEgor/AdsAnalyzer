@@ -1,65 +1,38 @@
 import datetime
 import logging
+from typing import Optional
 
-from src.auth.contract import ABCAuthRepository
+from pydantic import EmailStr
+
+from src.auth.core import ABCAuthRepository
 from src.auth.model import UserModel
-from src.auth.schema import RegisterUserSchema, LoginUserSchema, UserCredentialsSchema
+from src.auth.schema import RegisterUserSchema, LoginUserSchema, UserCredentialsSchema, UserFromDatabaseSchema
 from src.database import session_factory
 from sqlalchemy import select
 from src.auth.utils import hash_password, check_password
-from src.auth.exceptions import (
-    UserByThisEmailAlreadyExistException,
-    InvalidCredentialsException,
-    UnexpectedProblemException,
-)
 
 logger = logging.getLogger("auth.repository")
 
 
 class AuthRepositoryImpl(ABCAuthRepository):
-    async def register(self, register_user: RegisterUserSchema) -> int:
-        """
-        Save user credentials in database
-        """
+    @staticmethod
+    async def find_user_by_emil(user_email: EmailStr) -> Optional[UserModel]:
         async with session_factory() as session:
-            # Checking if the user exists
-            exist_user_query = select(UserModel).where(UserModel.email == register_user.email)
-            exist_user = await session.execute(exist_user_query)
-            exist_user = exist_user.scalar_one_or_none()
-            if exist_user:
-                logger.error(f"Try register {register_user.email}, but already exist.")
-                raise UserByThisEmailAlreadyExistException
+            user_by_email_query = select(UserModel).where(UserModel.email == user_email)
+            user = await session.execute(user_by_email_query)
+            user = user.scalar_one_or_none()
+            return user
 
-            # Saving the user
+    @staticmethod
+    async def save_user(user: RegisterUserSchema) -> int:
+        async with session_factory() as session:
             user = UserModel(
-                email=register_user.email,
-                password=hash_password(register_user.password),
-                register_at=datetime.datetime.now(datetime.UTC)
+                email=user.email,
+                password=hash_password(user.password),
+                register_at=datetime.datetime.now(datetime.UTC),
+                is_banned=False,
+                is_superuser=False,
             )
             session.add(user)
-            try:
-                await session.commit()
-                logger.info(f"Successful save new user {register_user.email}")
-            except Exception as e:
-                session.rollback()
-                logger.error(f"There's been an unexpected exceptions {str(e)}")
-                raise UnexpectedProblemException
+            await session.commit()
             return user.id
-
-    async def login(self, login_user: LoginUserSchema) -> UserCredentialsSchema:
-        """
-        Find user and compare this credentials
-        """
-        async with session_factory() as session:
-            # Checking if the user exists
-            exist_user_query = select(UserModel).where(UserModel.email == login_user.email)
-            exist_user = await session.execute(exist_user_query)
-            exist_user = exist_user.scalar_one_or_none()
-
-            # Compare input password and saved password
-            if not exist_user or not check_password(login_user.password, exist_user.password.encode()):
-                logger.error(f"Try login by invalid credentials: {login_user.email}.")
-                raise InvalidCredentialsException
-
-            logger.info(f"{login_user.email} successful login.")
-            return UserCredentialsSchema(id=exist_user.id, email=exist_user.email, is_banned=exist_user.is_banned, is_superuser=exist_user.is_superuser)

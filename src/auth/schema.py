@@ -28,6 +28,16 @@ class UserSuccessfulRegisterMessage(BaseModel):
     register_user_id: int
 
 
+class UserFromDatabaseSchema(BaseModel):
+    id: int
+    email: EmailStr
+    password: str
+    register_at: datetime.datetime
+    is_banned: bool
+    is_superuser: bool
+
+
+
 class UserTokenPayloadSchema(BaseModel):
     iat: int | float
     exp: int | float

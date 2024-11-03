@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, UploadFile, File
 import pandas as pd
-from pydantic import create_model
 
 from src.auth.dependency import AuthDependency
 from src.auth.schema import UserTokenPayloadSchema

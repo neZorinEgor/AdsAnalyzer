@@ -39,4 +39,6 @@ class AuthDependency:
         user = AuthDependency._get_user_from_token(credentials)
         if not user.is_superuser:
             raise UserIsNotSuperException
+        if user.is_banned:
+            raise UserIsBlockedException
         return user
