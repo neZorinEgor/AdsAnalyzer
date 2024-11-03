@@ -25,7 +25,7 @@ class UserCredentialsSchema(BaseModel):
 
 class UserSuccessfulRegisterMessage(BaseModel):
     message: str
-    register_user_id: int
+    user_id: int
 
 
 class UserFromDatabaseSchema(BaseModel):
@@ -35,7 +35,6 @@ class UserFromDatabaseSchema(BaseModel):
     register_at: datetime.datetime
     is_banned: bool
     is_superuser: bool
-
 
 
 class UserTokenPayloadSchema(BaseModel):

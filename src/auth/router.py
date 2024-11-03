@@ -45,7 +45,7 @@ async def forgot_password():
 
 
 @router.get(path="/me", response_model=UserTokenPayloadSchema, status_code=200)
-async def get_my_credentials(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.super_user)):
+async def get_my_credentials(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.not_banned_user)):
     """
     Example check access jwt token info
     """
