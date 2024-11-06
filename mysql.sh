@@ -1,5 +1,4 @@
-sudo aa-remove-unknown
-sudo systemctl restart snapd.apparmor
+sudo aa-remove-unknown;sudo systemctl restart snapd.apparmor;
 docker container prune
 docker run --name mysql-container \
     -e MYSQL_HOST=127.0.0.1 \

@@ -1,15 +1,21 @@
 version: "3"
 
 services:
-#  redis:
-#    image: redis:latest
-#    container_name: redis
-#    env_file:
-#      - .env
-#    expose:
-#      - ${REDIS_PORT}
-#    networks:
-#      - app-network
+  redis:
+    image: redis:latest
+    container_name: redis
+    env_file:
+      - .env
+    expose:
+      - ${REDIS_PORT}
+
+  celery_worker:
+    build: .
+    restart: always
+    container_name: celery_worker
+    command: celery -A src.instance:celery worker --loglevel=info
+    depends_on:
+      - redis
 
 #  localstack:
 #    image: localstack/localstack:latest
@@ -42,8 +48,6 @@ services:
       interval: 15s
       timeout: 15s
       retries: 4
-    networks:
-      - app-network
 
   fastapi:
     build:
@@ -57,8 +61,6 @@ services:
       mysql:
         condition: service_healthy
     command: bash -c "alembic upgrade head && uvicorn src.main:app --host ${APP_HOST} --port ${APP_PORT}"
-    networks:
-      - app-network
 
 #  nginx:
 #    image: nginx:latest
@@ -77,10 +79,5 @@ services:
 
 #volumes:
 #  localstack-data:
-
-
-networks:
-  app-network:
-    driver: "bridge"
 
 

@@ -1,6 +1,4 @@
-import datetime
-
-from pydantic import BaseModel, EmailStr, conbytes, constr
+from pydantic import BaseModel, EmailStr, constr
 
 
 class UserSchema(BaseModel):
@@ -16,25 +14,9 @@ class RegisterUserSchema(UserSchema):
     pass
 
 
-class UserCredentialsSchema(BaseModel):
-    id: int
-    email: EmailStr
-    is_banned: bool
-    is_superuser: bool
-
-
 class UserSuccessfulRegisterMessage(BaseModel):
     message: str
     user_id: int
-
-
-class UserFromDatabaseSchema(BaseModel):
-    id: int
-    email: EmailStr
-    password: str
-    register_at: datetime.datetime
-    is_banned: bool
-    is_superuser: bool
 
 
 class UserTokenPayloadSchema(BaseModel):

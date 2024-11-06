@@ -23,3 +23,11 @@ class ABCAuthRepository(ABC):
         Get user from `abstract` storage by email
         """
         raise NotImplemented("Method `find_user_by_emil` not implemented.")
+
+    @staticmethod
+    @abstractmethod
+    async def delete_user_by_id(user_id: int):
+        """
+        Delete user from `abstract` storage by email
+        """
+        raise NotImplemented("Method `delete_user_by_id` not implemented.")

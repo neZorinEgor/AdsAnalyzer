@@ -8,7 +8,7 @@ from src.auth.abstract import ABCAuthRepository
 from src.auth.model import UserModel
 from src.auth.schema import RegisterUserSchema
 from src.database import session_factory
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from src.auth.utils import hash_password
 
 logger = logging.getLogger("auth.repository")
@@ -36,3 +36,10 @@ class AuthRepositoryImpl(ABCAuthRepository):
             session.add(user)
             await session.commit()
             return user.id
+
+    @staticmethod
+    async def delete_user_by_id(user_id: int):
+        async with session_factory() as session:
+            delete_statement = delete(UserModel).where(UserModel.id == user_id)
+            await session.execute(delete_statement)
+            await session.commit()

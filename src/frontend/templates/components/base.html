@@ -15,7 +15,6 @@
         <a class="{% if request.path == '/manual' %}p-2 transition bg-gray-200 rounded block text-lg text-black{% else %}p-2 transition hover:bg-gray-200 rounded block text-lg text-black hover:text-black{% endif %}" href="/manual" >Мануал</a>
       </nav>
     </div>
-
     {# Main #}
     <main class="w-5/6 p-4">
         {% block content %}{% endblock %}

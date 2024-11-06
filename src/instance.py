@@ -1,5 +1,7 @@
 import logging
 
+from celery import Celery
+
 from fastapi import FastAPI, UploadFile
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
@@ -30,6 +32,12 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s:     %(asctime)s  
 logger = logging.getLogger(__name__)
 
 
+celery = Celery("Celery", broker=settings.redis_url)
+celery.conf.update(
+    imports=[
+        "src.notification.service",
+    ]
+)
 app = FastAPI(
     title="TrainMe 📚",
     description="`No-code` platform for automating the process of building and deploying machine learning models",

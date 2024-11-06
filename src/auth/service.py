@@ -46,3 +46,6 @@ class AuthService:
             "is_superuser": user.is_superuser
         }
         return JWTTokenInfo(access_token=encode_jwt(payload=jwt_payload), token_type="Bearer")
+
+    async def delete_my_account(self, user_id: int):
+        return await self.__repository.delete_user_by_id(user_id)

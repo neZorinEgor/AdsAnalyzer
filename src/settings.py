@@ -10,10 +10,22 @@ class Auth:
     public_jwt_key_path: Path = BASE_DIR / "auth" / "certs" / "jwt-public.pem"
     algorithm: str = "RS256"
     access_token_expire_minutes: int = 240
+    # refresh_token_expire_days: int = 3
+
+
+class SMTPEmail:
+    email_from: str = "smtptrainme@gmail.com"
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 465
+    password: str = "*********"
 
 
 class Settings(BaseSettings):
+    # Authentication
     auth: Auth = Auth()
+    # Notifications
+    smtp: SMTPEmail = SMTPEmail()
+
     # proxy
     NGINX_HTTP_PORT: str
     NGINX_HTTPS_PORT: str
