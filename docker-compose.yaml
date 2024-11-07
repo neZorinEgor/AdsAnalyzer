@@ -31,20 +31,20 @@ services:
   flower:
     image: mher/flower
     container_name: flower
-    command: celery -A celery flower --basic-auth=user:pswd --worker -celery_worker
+    command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
     volumes:
       - /src/instance/
     restart: always
     ports:
-      - 5555:5555
+      - ${FLOWER_PORT}:${FLOWER_PORT}
     healthcheck:
       test: [ "CMD", "celery", "-A", "celery", "status" ]
       interval: 10s
       timeout: 10s
       retries: 3
     environment:
-      CELERY_BROKER_URL: redis://redis
-      CELERY_RESULT_BACKEND: redis://redis
+      CELERY_BROKER_URL: redis://${REDIS_HOST}
+      CELERY_RESULT_BACKEND: redis://${REDIS_HOST}
     depends_on:
       celery_worker:
         condition: service_healthy

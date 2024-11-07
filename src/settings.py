@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).parent
 
@@ -22,17 +21,16 @@ class Settings(BaseSettings):
     SMTP_HOST: str
     SMTP_PORT: int
     SMTP_PASSWORD: str
-
-    # proxy
+    # Proxy
     NGINX_HTTP_PORT: str
     NGINX_HTTPS_PORT: str
-    # application
+    # Application
     APP_HOST: str
     APP_PORT: str
-    # cache
+    # Cache
     REDIS_HOST: str
     REDIS_PORT: str
-    # relation database
+    # Relation database
     MYSQL_HOST: str
     MYSQL_PORT: str
     MYSQL_USER: str
@@ -45,6 +43,10 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str
     S3_PORT: str
     S3_HOST: str
+    # flower frontend fot monitoring celery tasks
+    FLOWER_PORT: int
+    FLOWER_USERNAME: str
+    FLOWER_PASSWORD: str
 
     @property   # for migration
     def mysql_url(self):
