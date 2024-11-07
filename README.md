@@ -40,5 +40,11 @@ Also, [see.](https://github.com/zhanymkanov/fastapi-best-practices?tab=readme-ov
 
 ### Application Start-Up
 ```shell
+git clone https://github.com/NeZorinEgor/TrainMe
+openssl genrsa -out jwt-private.pem 2048
+openssl rsa -in jwt-private.pem -outform PEM -pubout -out jwt-public.pem
+mv jwt-p* src/auth/certs
+cp .env.example .env
+vim .env # set your credentials and envs
 docker-compose up --build
 ```

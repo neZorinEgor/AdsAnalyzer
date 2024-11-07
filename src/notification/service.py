@@ -13,7 +13,7 @@ class NotificationService:
             email_subject: str,
             email_to: str,
             content: str,
-            email_from=settings.smtp.email_from,
+            email_from=settings.SMTP_EMAIL_FROM,
     ):
         email = EmailMessage()
         email["Subject"] = email_subject
@@ -27,8 +27,8 @@ class NotificationService:
     @celery.task
     def send_email(email_to: EmailStr, email_subject="Test"):
         email = NotificationService.create_email_template(email_to=email_to, email_subject=email_subject, content="Тестовая отправка")
-        with smtplib.SMTP_SSL(host=settings.smtp.smtp_host, port=settings.smtp.smtp_port) as server:
-            server.login(user=settings.smtp.email_from, password=settings.smtp.password)
+        with smtplib.SMTP_SSL(host=settings.SMTP_HOST, port=settings.SMTP_PORT) as server:
+            server.login(user=settings.SMTP_EMAIL_FROM, password=settings.SMTP_PASSWORD)
             server.send_message(email)
 
 

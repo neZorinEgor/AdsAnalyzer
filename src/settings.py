@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).parent
 
@@ -13,18 +14,14 @@ class Auth:
     # refresh_token_expire_days: int = 3
 
 
-class SMTPEmail:
-    email_from: str = "smtptrainme@gmail.com"
-    smtp_host: str = "smtp.gmail.com"
-    smtp_port: int = 465
-    password: str = "***"
-
-
 class Settings(BaseSettings):
     # Authentication
     auth: Auth = Auth()
     # Notifications
-    smtp: SMTPEmail = SMTPEmail()
+    SMTP_EMAIL_FROM: str
+    SMTP_HOST: str
+    SMTP_PORT: int
+    SMTP_PASSWORD: str
 
     # proxy
     NGINX_HTTP_PORT: str

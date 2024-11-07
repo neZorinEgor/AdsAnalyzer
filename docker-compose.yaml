@@ -53,7 +53,7 @@ services:
 #    image: localstack/localstack:latest
 #    container_name: localstack
 #    env_file:
-#      - .env
+#      - .env.example
 #    ports:
 #      - ${S3_PORT}:${S3_PORT}
 #    environment:
@@ -90,6 +90,8 @@ services:
       dockerfile: Dockerfile
     container_name: fastapi
     restart: always
+    env_file:
+      - .env
     ports:
       - ${APP_PORT}:${APP_PORT}
     depends_on:

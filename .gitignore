@@ -8,3 +8,4 @@ alembic/versions/__pycache__/
 /src/auth/certs/jwt-private.pem
 /src/auth/certs/jwt-public.pem
 /src/weights/*
+/.env
