@@ -31,11 +31,12 @@
 Also, [see.](https://github.com/zhanymkanov/fastapi-best-practices?tab=readme-ov-file)
 
 ### ⏳ Progress
-1. [x] JWT Auth
-2. [x] S3 storage
-3. [ ] ML handlers
-4. [ ] AI handlers
-5. [ ] Pre-training
+1. [x] Access JWT
+2. [x] S3 
+3. [x] Email notification
+4. [ ] ML handlers
+5. [ ] AI handlers
+6. [ ] Pre-training
 
 ### Application Start-Up
 ```shell

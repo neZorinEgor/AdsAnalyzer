@@ -17,7 +17,7 @@ class SMTPEmail:
     email_from: str = "smtptrainme@gmail.com"
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 465
-    password: str = "*********"
+    password: str = "***"
 
 
 class Settings(BaseSettings):
