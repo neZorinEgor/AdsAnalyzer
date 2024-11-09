@@ -2,10 +2,8 @@ frontend_old/
 .venv/
 .idea/
 **/__pycache__/
-alembic/__pycache__/
-alembic/versions/__pycache__/
 
+auth/certs/*
 /src/auth/certs/jwt-private.pem
 /src/auth/certs/jwt-public.pem
-/src/weights/*
 /.env

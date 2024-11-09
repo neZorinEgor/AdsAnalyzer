@@ -1,120 +1,151 @@
 version: "3"
 
 services:
-  redis:
-    image: redis:latest
-    container_name: redis
-    env_file:
-      - .env
-    expose:
-      - ${REDIS_PORT}
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-
-  celery_worker:
-    build: .
-    restart: always
-    container_name: celery_worker
-    command: celery -A src.instance:celery worker --loglevel=info
-    depends_on:
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD", "celery", "-A", "src.instance:celery", "status" ]
-      interval: 10s
-      timeout: 10s
-      retries: 3
-
-  flower:
-    image: mher/flower
-    container_name: flower
-    command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
-    volumes:
-      - /src/instance/
-    restart: always
-    ports:
-      - ${FLOWER_PORT}:${FLOWER_PORT}
-    healthcheck:
-      test: [ "CMD", "celery", "-A", "celery", "status" ]
-      interval: 10s
-      timeout: 10s
-      retries: 3
-    environment:
-      CELERY_BROKER_URL: redis://${REDIS_HOST}
-      CELERY_RESULT_BACKEND: redis://${REDIS_HOST}
-    depends_on:
-      celery_worker:
-        condition: service_healthy
-
-#  localstack:
-#    image: localstack/localstack:latest
-#    container_name: localstack
-#    env_file:
-#      - .env.example
-#    ports:
-#      - ${S3_PORT}:${S3_PORT}
-#    environment:
-#      - SERVICES=s3
-#      - DEFAULT_REGION=us-east-1
-#      - AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY}
-#      - AWS_SECRET_ACCESS_KEY=${S3_SECRET_KEY}
-#      - EDGE_PORT=${S3_PORT}
-#    volumes:
-#      - localstack-data:/var/lib/localstack
-#    networks:
-#      - app-network
-
-  mysql:
+  auth_mysql:
     image: mysql:latest
-    container_name: mysql
+    container_name: auth_mysql
     restart: always
+    env_file:
+      - auth/.env
     expose:
       - ${MYSQL_PORT}
-    env_file:
-      - .env
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 15s
       timeout: 15s
       retries: 4
-    depends_on:
-      flower:
-        condition: service_healthy
 
-  fastapi:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: fastapi
-    restart: always
+  auth:
+    container_name: auth
     env_file:
-      - .env
+      - auth/.env
+    build:
+      context: auth
+      dockerfile: Dockerfile
+    command: bash -c "alembic upgrade head && uvicorn src.main:app --host ${APP_HOST} --port ${APP_PORT}"
     ports:
       - ${APP_PORT}:${APP_PORT}
     depends_on:
-      mysql:
+      auth_mysql:
         condition: service_healthy
-    command: bash -c "alembic upgrade head && uvicorn src.main:app --host ${APP_HOST} --port ${APP_PORT}"
 
-#  nginx:
-#    image: nginx:latest
-#    container_name: nginx
+#version: "3"
+#
+#services:
+#  redis:
+#    image: redis:latest
+#    container_name: redis
+#    env_file:
+#      - .env
+#    expose:
+#      - ${REDIS_PORT}
+#    healthcheck:
+#      test: [ "CMD", "redis-cli", "ping" ]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 3
+#
+#  celery_worker:
+#    build: .
 #    restart: always
+#    container_name: celery_worker
+#    command: celery -A src.instance:celery worker --loglevel=info
 #    depends_on:
-#      - fastapi
-#    ports:
-#      - ${NGINX_HTTP_PORT}:${NGINX_HTTP_PORT}  # Порт для HTTP
-#      - ${NGINX_HTTPS_PORT}:${NGINX_HTTPS_PORT}  # Порт для HTTPS
+#      redis:
+#        condition: service_healthy
+#    healthcheck:
+#      test: [ "CMD", "celery", "-A", "src.instance:celery", "status" ]
+#      interval: 10s
+#      timeout: 10s
+#      retries: 3
+#
+#  flower:
+#    image: mher/flower
+#    container_name: flower
+#    command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
 #    volumes:
-#      - ./nginx/conf.d:/etc/nginx/conf.d
-#      - ./nginx/certs:/etc/nginx/certs  # Монтируем сертификаты
-#    networks:
-#      - app-network
-
-#volumes:
-#  localstack-data:
-
-
+#      - /src/instance/
+#    restart: always
+#    ports:
+#      - ${FLOWER_PORT}:${FLOWER_PORT}
+#    healthcheck:
+#      test: [ "CMD", "celery", "-A", "celery", "status" ]
+#      interval: 10s
+#      timeout: 10s
+#      retries: 3
+#    environment:
+#      CELERY_BROKER_URL: redis://${REDIS_HOST}
+#      CELERY_RESULT_BACKEND: redis://${REDIS_HOST}
+#    depends_on:
+#      celery_worker:
+#        condition: service_healthy
+#
+##  localstack:
+##    image: localstack/localstack:latest
+##    container_name: localstack
+##    env_file:
+##      - .env.example
+##    ports:
+##      - ${S3_PORT}:${S3_PORT}
+##    environment:
+##      - SERVICES=s3
+##      - DEFAULT_REGION=us-east-1
+##      - AWS_ACCESS_KEY_ID=${S3_ACCESS_KEY}
+##      - AWS_SECRET_ACCESS_KEY=${S3_SECRET_KEY}
+##      - EDGE_PORT=${S3_PORT}
+##    volumes:
+##      - localstack-data:/var/lib/localstack
+##    networks:
+##      - app-network
+#
+#  mysql:
+#    image: mysql:latest
+#    container_name: mysql
+#    restart: always
+#    expose:
+#      - ${MYSQL_PORT}
+#    env_file:
+#      - .env
+#    healthcheck:
+#      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+#      interval: 15s
+#      timeout: 15s
+#      retries: 4
+#    depends_on:
+#      flower:
+#        condition: service_healthy
+#
+#  fastapi:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: fastapi
+#    restart: always
+#    env_file:
+#      - .env
+#    ports:
+#      - ${APP_PORT}:${APP_PORT}
+#    depends_on:
+#      mysql:
+#        condition: service_healthy
+#    command: bash -c "alembic upgrade head && uvicorn src.main:app --host ${APP_HOST} --port ${APP_PORT}"
+#
+##  nginx:
+##    image: nginx:latest
+##    container_name: nginx
+##    restart: always
+##    depends_on:
+##      - fastapi
+##    ports:
+##      - ${NGINX_HTTP_PORT}:${NGINX_HTTP_PORT}  # Порт для HTTP
+##      - ${NGINX_HTTPS_PORT}:${NGINX_HTTPS_PORT}  # Порт для HTTPS
+##    volumes:
+##      - ./nginx/conf.d:/etc/nginx/conf.d
+##      - ./nginx/certs:/etc/nginx/certs  # Монтируем сертификаты
+##    networks:
+##      - app-network
+#
+##volumes:
+##  localstack-data:
+#
+#
