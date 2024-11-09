@@ -1,7 +1,5 @@
-.venv/
-.idea/
+**/.venv/
+**/.idea/
 **/__pycache__/
-README.md
-mysql.sh
+**/README.md
 .gitignore
-src/auth/certs/README.md

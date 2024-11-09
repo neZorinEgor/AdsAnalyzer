@@ -1,9 +1,6 @@
-frontend_old/
-.venv/
-.idea/
+**/.venv/
+**/.idea/
 **/__pycache__/
-
-auth/certs/*
-/src/auth/certs/jwt-private.pem
-/src/auth/certs/jwt-public.pem
-/.env
+**/jwt-private.pem
+**/jwt-public.pem
+**/.env

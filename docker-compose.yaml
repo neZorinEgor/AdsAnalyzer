@@ -4,9 +4,8 @@ services:
   auth_mysql:
     image: mysql:latest
     container_name: auth_mysql
-    restart: always
     env_file:
-      - auth/.env
+      - ./auth/.env
     expose:
       - ${MYSQL_PORT}
     healthcheck:
@@ -18,16 +17,37 @@ services:
   auth:
     container_name: auth
     env_file:
-      - auth/.env
+      - ./auth/.env
     build:
       context: auth
       dockerfile: Dockerfile
-    command: bash -c "alembic upgrade head && uvicorn src.main:app --host ${APP_HOST} --port ${APP_PORT}"
+    command: bash -c "alembic upgrade head && uvicorn src.main:app --host ${APPS_HOST} --port ${AUTH_PORT}"
     ports:
-      - ${APP_PORT}:${APP_PORT}
+      - ${AUTH_PORT}:${AUTH_PORT}
     depends_on:
       auth_mysql:
         condition: service_healthy
+    healthcheck:
+      test: curl http://0.0.0.0:${AUTH_PORT}
+      interval: 15s
+      timeout: 15s
+      retries: 4
+
+#  notification_redis:
+#    image: redis:latest
+#    container_name: notification_redis
+#    env_file:
+#      - notification/.env
+#    expose:
+#      - ${REDIS_PORT}
+#    healthcheck:
+#      test: [ "CMD", "redis-cli", "ping" ]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 3
+#    depends_on:
+#      auth:
+#        condition: service_healthy
 
 #version: "3"
 #
