@@ -10,6 +10,6 @@ router = APIRouter(prefix="/notification")
 @router.post("/send")
 def send_email(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.not_banned_user)):
     try:
-        NotificationService.send_email(user_credentials.email)
+        NotificationService.send_email.delay(user_credentials.email)
     except Exception as e:
         return str(e)

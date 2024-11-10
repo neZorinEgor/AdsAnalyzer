@@ -25,26 +25,8 @@
 * BERT?
 * Reinforcement?
 
-### 🏛️ Structure
-> The structure I found more scalable and evolvable for these cases is inspired by Netflix's [Dispatch](https://github.com/Netflix/dispatch), with some minor modifications.
-
-Also, [see.](https://github.com/zhanymkanov/fastapi-best-practices?tab=readme-ov-file)
-
-### ⏳ Progress
-1. [x] Access JWT
-2. [x] S3 
-3. [x] Email notification
-4. [ ] ML handlers
-5. [ ] AI handlers
-6. [ ] Pre-training
 
 ### Application Start-Up
 ```shell
-git clone https://github.com/NeZorinEgor/TrainMe
-openssl genrsa -out jwt-private.pem 2048
-openssl rsa -in jwt-private.pem -outform PEM -pubout -out jwt-public.pem
-mv jwt-p* src/auth/certs
-cp .env.example .env
-vim .env # set your credentials and envs
 docker-compose up --build
 ```

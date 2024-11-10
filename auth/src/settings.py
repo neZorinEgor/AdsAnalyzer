@@ -14,12 +14,8 @@ class Auth:
 
 
 class Settings(BaseSettings):
-    # Authentication
     auth: Auth = Auth()
-    # Application
-    APP_HOST: str
-    APP_PORT: str
-    # Relation database
+
     MYSQL_HOST: str
     MYSQL_PORT: str
     MYSQL_USER: str

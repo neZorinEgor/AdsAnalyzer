@@ -1,6 +1,20 @@
 version: "3"
 
 services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    env_file:
+      - notification/.env
+    expose:
+      - ${REDIS_PORT}
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+
   auth_mysql:
     image: mysql:latest
     container_name: auth_mysql
@@ -13,6 +27,9 @@ services:
       interval: 15s
       timeout: 15s
       retries: 4
+    depends_on:
+      redis:
+        condition: service_healthy
 
   auth:
     container_name: auth
@@ -28,78 +45,61 @@ services:
       auth_mysql:
         condition: service_healthy
     healthcheck:
-      test: curl http://0.0.0.0:${AUTH_PORT}
+      test: wget --no-verbose -O /dev/null --tries=1 http://auth:${AUTH_PORT}/docs || exit 1
       interval: 15s
       timeout: 15s
       retries: 4
 
-#  notification_redis:
-#    image: redis:latest
-#    container_name: notification_redis
-#    env_file:
-#      - notification/.env
-#    expose:
-#      - ${REDIS_PORT}
-#    healthcheck:
-#      test: [ "CMD", "redis-cli", "ping" ]
-#      interval: 5s
-#      timeout: 5s
-#      retries: 3
-#    depends_on:
-#      auth:
-#        condition: service_healthy
+  notification:
+    container_name: notification
+    env_file:
+      - ./notification/.env
+    build:
+      context: notification
+      dockerfile: Dockerfile
+    command: bash -c "uvicorn src.main:app --host ${APPS_HOST} --port ${NOTIFICATIONS_PORT}"
+    ports:
+      - ${NOTIFICATIONS_PORT}:${NOTIFICATIONS_PORT}
+    depends_on:
+      redis:
+        condition: service_healthy
 
-#version: "3"
-#
-#services:
-#  redis:
-#    image: redis:latest
-#    container_name: redis
-#    env_file:
-#      - .env
-#    expose:
-#      - ${REDIS_PORT}
-#    healthcheck:
-#      test: [ "CMD", "redis-cli", "ping" ]
-#      interval: 5s
-#      timeout: 5s
-#      retries: 3
-#
-#  celery_worker:
-#    build: .
-#    restart: always
-#    container_name: celery_worker
-#    command: celery -A src.instance:celery worker --loglevel=info
-#    depends_on:
-#      redis:
-#        condition: service_healthy
-#    healthcheck:
-#      test: [ "CMD", "celery", "-A", "src.instance:celery", "status" ]
-#      interval: 10s
-#      timeout: 10s
-#      retries: 3
-#
-#  flower:
-#    image: mher/flower
-#    container_name: flower
-#    command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
-#    volumes:
-#      - /src/instance/
-#    restart: always
-#    ports:
-#      - ${FLOWER_PORT}:${FLOWER_PORT}
-#    healthcheck:
-#      test: [ "CMD", "celery", "-A", "celery", "status" ]
-#      interval: 10s
-#      timeout: 10s
-#      retries: 3
-#    environment:
-#      CELERY_BROKER_URL: redis://${REDIS_HOST}
-#      CELERY_RESULT_BACKEND: redis://${REDIS_HOST}
-#    depends_on:
-#      celery_worker:
-#        condition: service_healthy
-#
+  celery_worker:
+    build:
+      context: notification
+      dockerfile: Dockerfile
+    container_name: celery_worker
+    command: celery -A src.core.service:celery worker --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "celery", "-A", "src.core.service:celery", "status" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  flower:
+    image: mher/flower
+    container_name: flower
+    command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
+    volumes:
+      - /notification/src/core/service
+    restart: always
+    ports:
+      - ${FLOWER_PORT}:${FLOWER_PORT}
+    healthcheck:
+      test: [ "CMD", "celery", "-A", "celery", "status" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    environment:
+      CELERY_BROKER_URL: redis://${REDIS_HOST}
+      CELERY_RESULT_BACKEND: redis://${REDIS_HOST}
+    depends_on:
+      celery_worker:
+        condition: service_healthy
+
 ##  localstack:
 ##    image: localstack/localstack:latest
 ##    container_name: localstack
@@ -117,55 +117,3 @@ services:
 ##      - localstack-data:/var/lib/localstack
 ##    networks:
 ##      - app-network
-#
-#  mysql:
-#    image: mysql:latest
-#    container_name: mysql
-#    restart: always
-#    expose:
-#      - ${MYSQL_PORT}
-#    env_file:
-#      - .env
-#    healthcheck:
-#      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-#      interval: 15s
-#      timeout: 15s
-#      retries: 4
-#    depends_on:
-#      flower:
-#        condition: service_healthy
-#
-#  fastapi:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    container_name: fastapi
-#    restart: always
-#    env_file:
-#      - .env
-#    ports:
-#      - ${APP_PORT}:${APP_PORT}
-#    depends_on:
-#      mysql:
-#        condition: service_healthy
-#    command: bash -c "alembic upgrade head && uvicorn src.main:app --host ${APP_HOST} --port ${APP_PORT}"
-#
-##  nginx:
-##    image: nginx:latest
-##    container_name: nginx
-##    restart: always
-##    depends_on:
-##      - fastapi
-##    ports:
-##      - ${NGINX_HTTP_PORT}:${NGINX_HTTP_PORT}  # Порт для HTTP
-##      - ${NGINX_HTTPS_PORT}:${NGINX_HTTPS_PORT}  # Порт для HTTPS
-##    volumes:
-##      - ./nginx/conf.d:/etc/nginx/conf.d
-##      - ./nginx/certs:/etc/nginx/certs  # Монтируем сертификаты
-##    networks:
-##      - app-network
-#
-##volumes:
-##  localstack-data:
-#
-#

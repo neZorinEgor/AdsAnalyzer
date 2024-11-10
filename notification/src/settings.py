@@ -12,9 +12,6 @@ class Auth:
 class Settings(BaseSettings):
     auth: Auth = Auth()
 
-    APP_HOST: str
-    APP_PORT: int
-
     SMTP_EMAIL_FROM: str
     SMTP_HOST: str
     SMTP_PORT: int
