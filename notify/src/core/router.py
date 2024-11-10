@@ -4,7 +4,7 @@ from src.core.auth.dependency import AuthDependency
 from src.core.auth.schema import UserTokenPayloadSchema
 from src.core.service import NotificationService
 
-router = APIRouter(prefix="/notification")
+router = APIRouter(prefix="/notify")
 
 
 @router.post("/send")

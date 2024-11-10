@@ -5,7 +5,7 @@ services:
     image: redis:latest
     container_name: redis
     env_file:
-      - notification/.env
+      - notify/.env
     expose:
       - ${REDIS_PORT}
     healthcheck:
@@ -51,11 +51,11 @@ services:
       retries: 4
 
   notification:
-    container_name: notification
+    container_name: notify
     env_file:
-      - ./notification/.env
+      - notify/.env
     build:
-      context: notification
+      context: notify
       dockerfile: Dockerfile
     command: bash -c "uvicorn src.main:app --host ${APPS_HOST} --port ${NOTIFICATIONS_PORT}"
     ports:
@@ -66,7 +66,7 @@ services:
 
   celery_worker:
     build:
-      context: notification
+      context: notify
       dockerfile: Dockerfile
     container_name: celery_worker
     command: celery -A src.core.service:celery worker --loglevel=info
@@ -84,7 +84,7 @@ services:
     container_name: flower
     command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
     volumes:
-      - /notification/src/core/service
+      - /notify/src/core/service
     restart: always
     ports:
       - ${FLOWER_PORT}:${FLOWER_PORT}

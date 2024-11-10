@@ -21,11 +21,6 @@
 4. Implementation of models in third-party projects
 5. Modelling access control
 
-### 📈 Perspectives:
-* BERT?
-* Reinforcement?
-
-
 ### Application Start-Up
 ```shell
 docker-compose up --build
