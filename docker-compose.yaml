@@ -2,7 +2,7 @@ version: "3"
 
 services:
   redis:
-    image: redis:latest
+    image: redis:8.0-M02-bookworm
     container_name: redis
     env_file:
       - notify/.env
@@ -16,7 +16,7 @@ services:
 
 
   auth_mysql:
-    image: mysql:latest
+    image: mysql:9.1.0
     container_name: auth_mysql
     env_file:
       - ./auth/.env
@@ -80,7 +80,7 @@ services:
       retries: 3
 
   flower:
-    image: mher/flower
+    image: mher/flower:2.0
     container_name: flower
     command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
     volumes:
