@@ -4,3 +4,4 @@
 **/jwt-private.pem
 **/jwt-public.pem
 **/.env
+/rabbitmq/

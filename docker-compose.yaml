@@ -1,6 +1,16 @@
 version: "3"
 
 services:
+  rabbitmq:
+    image: rabbitmq:4.0.3-management
+    hostname: rabbitmq
+    container_name: rabbitmq
+    ports:
+      - ${RABBITMQ_PORT}:${RABBITMQ_PORT}
+      - ${RABBITMQ_MANAGEMENT_PORT}:${RABBITMQ_MANAGEMENT_PORT}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
   redis:
     image: redis:8.0-M02-bookworm
     container_name: redis
@@ -13,7 +23,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 3
-
 
   auth_mysql:
     image: mysql:9.1.0
@@ -44,11 +53,6 @@ services:
     depends_on:
       auth_mysql:
         condition: service_healthy
-    healthcheck:
-      test: wget --no-verbose -O /dev/null --tries=1 http://auth:${AUTH_PORT}/docs || exit 1
-      interval: 15s
-      timeout: 15s
-      retries: 4
 
   notification:
     container_name: notify
@@ -63,6 +67,17 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+
+  gateway:
+    container_name: gateway
+    env_file:
+      - gateway/.env
+    build:
+      context: gateway
+      dockerfile: Dockerfile
+    command: bash -c "uvicorn src.main:app --host ${APPS_HOST} --port ${GATEWAY_PORT}"
+    ports:
+      - ${GATEWAY_PORT}:${GATEWAY_PORT}
 
   celery_worker:
     build:
@@ -117,3 +132,6 @@ services:
 ##      - localstack-data:/var/lib/localstack
 ##    networks:
 ##      - app-network
+
+volumes:
+  rabbitmq-data:
