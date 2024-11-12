@@ -16,6 +16,19 @@ class Auth:
 class Settings(BaseSettings):
     auth: Auth = Auth()
 
+    APP_HOST: str
+    APP_PORT: str
+
+    SMTP_EMAIL_FROM: str
+    SMTP_HOST: str
+    SMTP_PORT: str
+    SMTP_PASSWORD: str
+
+    RABBITMQ_PORT: str
+    RABBITMQ_HOST: str
+    RABBITMQ_DEFAULT_USER: str
+    RABBITMQ_DEFAULT_PASS: str
+
     MYSQL_HOST: str
     MYSQL_PORT: str
     MYSQL_USER: str
@@ -32,6 +45,10 @@ class Settings(BaseSettings):
         return f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
 
     model_config = SettingsConfigDict(env_file=".env")
+
+    @property   # for broker
+    def rabbitmq_url(self):
+        return f"amqp://{self.RABBITMQ_DEFAULT_USER}:{self.RABBITMQ_DEFAULT_PASS}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}"
 
 
 settings = Settings()

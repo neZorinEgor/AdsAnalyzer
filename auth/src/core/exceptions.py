@@ -1,7 +1,7 @@
 from fastapi import status
 from fastapi.exceptions import HTTPException
 
-UserByThisEmailAlreadyExistException = HTTPException(
+UserAlreadyExistException = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="User by this email already exist."
 )
@@ -29,9 +29,4 @@ UserIsBlockedException = HTTPException(
 UserIsNotSuperException = HTTPException(
     status_code=status.HTTP_403_FORBIDDEN,
     detail="Permission denied."
-)
-
-UnexpectedProblemException = HTTPException(
-    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    detail="There may be a problem. Please try again later."
 )

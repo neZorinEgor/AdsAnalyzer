@@ -23,14 +23,7 @@ app = FastAPI(
 )
 
 # Origins url's for CORS
-origins = [
-    "http://127.0.0.1:8000",
-    "https://127.0.0.1:8000",
-    "http://0.0.0.0:8000",
-    "https://0.0.0.0:8000",
-    "http://localhost:8000",
-    "https://localhost:8000",
-]
+origins = ["*"]
 
 # Cors middleware
 app.add_middleware(

@@ -9,3 +9,5 @@ SQLAlchemy==2.0.31
 pyjwt==2.8.0
 cryptography==42.0.8
 bcrypt==4.2.0
+celery==5.4.0
+flower==2.0.1

@@ -54,34 +54,34 @@ services:
       auth_mysql:
         condition: service_healthy
 
-  notification:
-    container_name: notify
-    env_file:
-      - notify/.env
-    build:
-      context: notify
-      dockerfile: Dockerfile
-    command: bash -c "uvicorn src.main:app --host ${APPS_HOST} --port ${NOTIFICATIONS_PORT}"
-    ports:
-      - ${NOTIFICATIONS_PORT}:${NOTIFICATIONS_PORT}
-    depends_on:
-      redis:
-        condition: service_healthy
-
-  gateway:
-    container_name: gateway
-    env_file:
-      - gateway/.env
-    build:
-      context: gateway
-      dockerfile: Dockerfile
-    command: bash -c "uvicorn src.main:app --host ${APPS_HOST} --port ${GATEWAY_PORT}"
-    ports:
-      - ${GATEWAY_PORT}:${GATEWAY_PORT}
-
+#  notification:
+#    container_name: notify
+#    env_file:
+#      - notify/.env
+#    build:
+#      context: notify
+#      dockerfile: Dockerfile
+#    command: bash -c "uvicorn src.main:app --host ${APPS_HOST} --port ${NOTIFICATIONS_PORT}"
+#    ports:
+#      - ${NOTIFICATIONS_PORT}:${NOTIFICATIONS_PORT}
+#    depends_on:
+#      redis:
+#        condition: service_healthy
+#
+#  gateway:
+#    container_name: gateway
+#    env_file:
+#      - gateway/.env
+#    build:
+#      context: gateway
+#      dockerfile: Dockerfile
+#    command: bash -c "uvicorn src.main:app --host ${APPS_HOST} --port ${GATEWAY_PORT}"
+#    ports:
+#      - ${GATEWAY_PORT}:${GATEWAY_PORT}
+#
   celery_worker:
     build:
-      context: notify
+      context: auth
       dockerfile: Dockerfile
     container_name: celery_worker
     command: celery -A src.core.service:celery worker --loglevel=info
