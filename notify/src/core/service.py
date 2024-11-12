@@ -6,7 +6,7 @@ from pydantic import EmailStr
 from src.settings import settings
 
 
-celery = Celery("notifications", broker=settings.redis_url)
+celery = Celery("notifications", broker=settings.rabbitmq_url)
 
 
 class NotificationService:

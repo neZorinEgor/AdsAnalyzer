@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
     pass
 
 app = FastAPI(
-    title="GatewayAPI",
+    title="API-Gateway",
     lifespan=lifespan,
     docs_url="/docs",
     version="1.0.0",

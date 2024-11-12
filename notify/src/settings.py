@@ -17,12 +17,14 @@ class Settings(BaseSettings):
     SMTP_PORT: int
     SMTP_PASSWORD: str
 
-    REDIS_HOST: str
-    REDIS_PORT: int
+    RABBITMQ_PORT: int
+    RABBITMQ_HOST: str
+    RABBITMQ_DEFAULT_USER: str
+    RABBITMQ_DEFAULT_PASS: str
 
     @property
-    def redis_url(self):
-        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
+    def rabbitmq_url(self):
+        return f"amqp://{self.RABBITMQ_DEFAULT_USER}:{self.RABBITMQ_DEFAULT_PASS}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}"
 
     model_config = SettingsConfigDict(env_file=".env")
 
