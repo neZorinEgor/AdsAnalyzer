@@ -1,5 +1,4 @@
 import logging
-import random
 
 from fastapi import APIRouter, Depends
 from pydantic import EmailStr, constr
@@ -15,6 +14,7 @@ from src.core.schema import (
     UserTokenPayloadSchema,
     UserSuccessfulRegisterMessage,
 )
+from src.core.utils import create_access_token
 
 router = APIRouter()
 logger = logging.getLogger("auth.router")
@@ -35,12 +35,20 @@ async def register(
 @router.post("/auth/jwt/login", response_model=JWTTokenInfo, status_code=200, tags=["JWT-Auth"])
 async def login(
     login_user: LoginUserSchema,
-):
+) -> JWTTokenInfo:
     """
     Endpoint for generate access jwt token for exist user
     """
     logger.info(f"Received logging request for {login_user.email}")
     return await AuthService(AuthRepositoryImpl).login(login_user)
+
+
+@router.post("/auth/jwt/refresh", response_model=JWTTokenInfo, response_model_exclude_none=True)
+async def refresh_jwt(
+        user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user_for_refresh),
+) -> JWTTokenInfo:
+    user = await AuthRepositoryImpl().find_user_by_email(user_credentials.email)
+    return JWTTokenInfo(access_token=create_access_token(user))
 
 
 @router.post("/auth/jwt/forgot_password", tags=["JWT-Auth"])
@@ -58,7 +66,7 @@ async def reset_password(token: str, new_password: constr(min_length=8)):
 
 
 @router.get(path="/user/me", response_model=UserTokenPayloadSchema, status_code=200, tags=["User"])
-async def get_my_credentials(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.not_banned_user)):
+async def get_my_credentials(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)):
     """
     Example check access jwt token info
     """
@@ -66,6 +74,6 @@ async def get_my_credentials(user_credentials: UserTokenPayloadSchema = Depends(
 
 
 @router.delete("/user/delete_my_account", tags=["User"])
-async def delete_my_account(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.not_banned_user)):
+async def delete_my_account(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)):
     # TODO
     return await AuthService(AuthRepositoryImpl).delete_my_account(user_credentials.sub)

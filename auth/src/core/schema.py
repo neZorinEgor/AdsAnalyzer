@@ -23,11 +23,13 @@ class UserTokenPayloadSchema(BaseModel):
     iat: int | float
     exp: int | float
     sub: int
-    email: EmailStr
-    is_banned: bool
-    is_superuser: bool
+    email: EmailStr | None
+    is_banned: bool | None = None
+    is_superuser: bool | None = None
+    jti: str
 
 
 class JWTTokenInfo(BaseModel):
+    refresh_token: str | None = None
     access_token: str
-    token_type: str
+    token_type: str = "Bearer"

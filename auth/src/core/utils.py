@@ -2,15 +2,25 @@ import datetime
 
 import jwt
 import bcrypt
+from enum import StrEnum
+import uuid
 
+from src.core.model import UserModel
 from src.settings import settings
+
+TOKEN_TYPE_FIELD = "type"
+
+
+class TokenType(StrEnum):
+    REFRESH = "refresh"
+    ACCESS = "access"
 
 
 def encode_jwt(
         payload: dict,
         private_key: str = settings.auth.private_jwt_key_path.read_text(),
         algorithm: str = settings.auth.algorithm,
-        expire_minutes: int = settings.auth.access_token_expire_minutes
+        expire_timedelta: datetime.timedelta = settings.auth.access_token_expire_minutes
 ):
     """
     Encode JWT token by long private key
@@ -18,8 +28,9 @@ def encode_jwt(
     now = datetime.datetime.now(datetime.UTC)
     to_encode = payload.copy()
     to_encode.update(
-        exp=now + datetime.timedelta(minutes=expire_minutes),
+        exp=now + expire_timedelta,
         iat=now,
+        jti=str(uuid.uuid4())
     )
     return jwt.encode(to_encode, key=private_key, algorithm=algorithm)
 
@@ -48,3 +59,34 @@ def check_password(password: str, hashed_password: bytes) -> bool:
     Compare input password and hash
     """
     return bcrypt.checkpw(password.encode(), hashed_password)
+
+
+def create_jwt(
+        token_type: str,
+        token_data: dict,
+        expire_timedelta: datetime.timedelta = settings.auth.access_token_expire_minutes,
+
+) -> str:
+    jwt_payload = {TOKEN_TYPE_FIELD: token_type}
+    jwt_payload.update(token_data)
+    return encode_jwt(payload=jwt_payload, expire_timedelta=expire_timedelta, )
+
+
+def create_access_token(user: UserModel) -> str:
+    jwt_payload = {
+        "sub": user.id,
+        "email": user.email,
+    }
+    return create_jwt(token_type=TokenType.ACCESS, token_data=jwt_payload)
+
+
+def create_refresh_token(user: UserModel) -> str:
+    jwt_payload = {
+        "sub": user.id,
+        "email": user.email,
+    }
+    return create_jwt(
+        token_type=TokenType.REFRESH,
+        token_data=jwt_payload,
+        expire_timedelta=settings.auth.refresh_token_expire_days
+    )

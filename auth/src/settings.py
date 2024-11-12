@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,8 +10,8 @@ class Auth:
     private_jwt_key_path: Path = BASE_DIR / "core" / "certs" / "jwt-private.pem"
     public_jwt_key_path: Path = BASE_DIR / "core" / "certs" / "jwt-public.pem"
     algorithm: str = "RS256"
-    access_token_expire_minutes: int = 240
-    # refresh_token_expire_days: int = 3
+    access_token_expire_minutes: datetime.timedelta = datetime.timedelta(minutes=15)
+    refresh_token_expire_days: datetime.timedelta = datetime.timedelta(days=7)
 
 
 class Settings(BaseSettings):

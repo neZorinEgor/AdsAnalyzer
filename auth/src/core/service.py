@@ -1,5 +1,6 @@
 import logging
 import smtplib
+from datetime import timedelta
 from email.message import EmailMessage
 
 from celery import Celery
@@ -7,7 +8,7 @@ from pydantic import EmailStr, constr
 
 from src.core.abstract import ABCAuthRepository
 from src.core.schema import RegisterUserSchema, LoginUserSchema, JWTTokenInfo
-from src.core.utils import encode_jwt, check_password, decode_jwt, hash_password
+from src.core import utils as jwt_utils
 from src.core.exceptions import (
     UserAlreadyExistException,
     InvalidCredentialsException,
@@ -38,7 +39,7 @@ class AuthService:
     async def login(self, login_user: LoginUserSchema) -> JWTTokenInfo:
         # 1. Verify that the user exists and is submitting the required credentials
         user = await self.__repository.find_user_by_email(login_user.email)
-        if not user or not check_password(login_user.password, user.password.encode()):
+        if not user or not jwt_utils.check_password(login_user.password, user.password.encode()):
             logger.error(f"Try login by invalid credentials: {login_user.email}.")
             raise InvalidCredentialsException
         # 2. Check if the user is banned
@@ -46,20 +47,17 @@ class AuthService:
             raise UserIsBlockedException
         # 3. Issue access JWT token
         logger.info(f"{login_user.email} successful login.")
-        jwt_payload = {
-            "sub": user.id,
-            "email": user.email,
-            "is_banned": user.is_banned,
-            "is_superuser": user.is_superuser
-        }
-        return JWTTokenInfo(access_token=encode_jwt(payload=jwt_payload), token_type="Bearer")
+        access_token = jwt_utils.create_access_token(user)
+        refresh_token = jwt_utils.create_refresh_token(user)
+        return JWTTokenInfo(access_token=access_token, refresh_token=refresh_token)
 
     async def delete_my_account(self, user_id: int) -> None:
+        logger.info(f"User by id: {user_id} delete account.")
         return await self.__repository.delete_user_by_id(user_id)
 
     async def reset_password(self, token: str, new_password: constr(min_length=8)) -> None:
-        user_email = decode_jwt(token).get("email")
-        await self.__repository.reset_password(email=user_email, new_password=hash_password(new_password))
+        user_email = jwt_utils.decode_jwt(token).get("email")
+        await self.__repository.reset_password(email=user_email, new_password=jwt_utils.hash_password(new_password))
 
     async def forgot_password(self, email: EmailStr) -> None:
         user = await self.__repository.find_user_by_email(email=email)
@@ -67,7 +65,7 @@ class AuthService:
             # Do not inform the user if the account exists for security reasons.
             # Just advise them to check their registration or verify the entered data if the email is incorrect.
             pass
-        email_token = encode_jwt(payload={"email": email}, expire_minutes=30)
+        email_token = jwt_utils.encode_jwt(payload={"email": email}, expire_timedelta=timedelta(minutes=30))
         email_subject = "Password Reset Request"
         # TODO: HTML message
         content = f'{email_token}'

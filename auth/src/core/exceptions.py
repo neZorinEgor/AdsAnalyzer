@@ -16,6 +16,11 @@ InvalidTokenException = HTTPException(
     detail="Invalid token."
 )
 
+InvalidTokenTypeException = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Invalid token type."
+)
+
 ExpiredTokenException = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Token has expired."
