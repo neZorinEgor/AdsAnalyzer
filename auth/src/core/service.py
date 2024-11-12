@@ -3,7 +3,7 @@ import smtplib
 from email.message import EmailMessage
 
 from celery import Celery
-from pydantic import EmailStr
+from pydantic import EmailStr, constr
 
 from src.core.abstract import ABCAuthRepository
 from src.core.schema import RegisterUserSchema, LoginUserSchema, JWTTokenInfo
@@ -57,35 +57,29 @@ class AuthService:
     async def delete_my_account(self, user_id: int):
         return await self.__repository.delete_user_by_id(user_id)
 
-    async def reset_password(self, token: str):
+    async def reset_password(self, token: str, new_password: constr(min_length=8)):
         print(decode_jwt(token))
 
     @staticmethod
     def forgot_password(email: EmailStr) -> None:
-        # Do not inform the user if the account exists for security reasons.
-        # Just advise them to check their registration or verify the entered data if the email is incorrect.
         email_token = encode_jwt(payload={"email": email}, expire_minutes=30)
         reset_email_by_token_link = f"http://{settings.APP_HOST}:{settings.APP_PORT}/reset_password?token={email_token}"
-        email_message = AuthService.__create_email_template(
-            email_subject="Password Reset Request",
-            email_to=email,
-            content=f"To reset your password, please click the following link: {reset_email_by_token_link}",
-        )
-        AuthService.__send_email.delay(email_message)
+        email_subject = "Password Reset Request"
+        content = f'To reset your password, please click the following <a href="{reset_email_by_token_link}">link</a>'
 
-    @staticmethod
-    def __create_email_template(email_subject: str, email_to: str, content: str, email_from=settings.SMTP_EMAIL_FROM) -> EmailMessage:
-        email = EmailMessage()
-        email["Subject"] = email_subject
-        email["To"] = email_to
-        email["From"] = email_from
-
-        email.set_content(f"<h1>Здравствуйте, {email_to}</h1>\n{content}", subtype="html")
-        return email
+        # Передаем данные для создания письма в задачу, а не сам объект EmailMessage
+        AuthService.__send_email.delay(email_subject, email, content)
 
     @staticmethod
     @celery.task
-    def __send_email(email: EmailMessage) -> None:
+    def __send_email(email_subject: str, email_to: str, content: str) -> None:
+        email = EmailMessage()
+        email["Subject"] = email_subject
+        email["To"] = email_to
+        email["From"] = settings.SMTP_EMAIL_FROM
+        email.set_content(f"{content}", subtype="html")
+
+        # Отправка письма
         with smtplib.SMTP_SSL(host=settings.SMTP_HOST, port=settings.SMTP_PORT) as server:
             server.login(user=settings.SMTP_EMAIL_FROM, password=settings.SMTP_PASSWORD)
             server.send_message(email)

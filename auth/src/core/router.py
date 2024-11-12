@@ -2,13 +2,14 @@ import logging
 import random
 
 from fastapi import APIRouter, Depends
-from pydantic import EmailStr
+from pydantic import EmailStr, constr
 
 from src.core.dependency import AuthDependency
 
 from src.core.repository import AuthRepositoryImpl
 from src.core.service import AuthService
 from src.core.schema import (
+    NewPassword,
     JWTTokenInfo,
     LoginUserSchema,
     RegisterUserSchema,
@@ -43,7 +44,7 @@ async def login(
     return await AuthService(AuthRepositoryImpl).login(login_user)
 
 
-@router.post("/auth/jwt/forgot_password")
+@router.post("/auth/jwt/forgot_password", tags=["Auth"])
 async def forgot_password(user_email: EmailStr):
     AuthService.forgot_password(email=user_email)
     return {
@@ -52,8 +53,9 @@ async def forgot_password(user_email: EmailStr):
     }
 
 
-async def reset_password(token: str):
-    pass
+@router.put("/user/reset_password")
+async def reset_password(token: str, new_password: NewPassword):
+    await AuthService(AuthRepositoryImpl).reset_password(token=token, new_password=new_password)
 
 
 @router.get(path="/user/me", response_model=UserTokenPayloadSchema, status_code=200, tags=["User"])

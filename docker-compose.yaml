@@ -10,19 +10,24 @@ services:
       - ${RABBITMQ_MANAGEMENT_PORT}:${RABBITMQ_MANAGEMENT_PORT}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-
-  redis:
-    image: redis:8.0-M02-bookworm
-    container_name: redis
-    env_file:
-      - notify/.env
-    expose:
-      - ${REDIS_PORT}
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 5s
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
       retries: 3
+
+#  redis:
+#    image: redis:8.0-M02-bookworm
+#    container_name: redis
+#    env_file:
+#      - notify/.env
+#    expose:
+#      - ${REDIS_PORT}
+#    healthcheck:
+#      test: [ "CMD", "redis-cli", "ping" ]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 3
 
   auth_mysql:
     image: mysql:9.1.0
@@ -37,7 +42,7 @@ services:
       timeout: 15s
       retries: 4
     depends_on:
-      redis:
+      rabbitmq:
         condition: service_healthy
 
   auth:
@@ -86,7 +91,7 @@ services:
     container_name: celery_worker
     command: celery -A src.core.service:celery worker --loglevel=info
     depends_on:
-      redis:
+      auth_mysql:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "celery", "-A", "src.core.service:celery", "status" ]
@@ -94,27 +99,24 @@ services:
       timeout: 10s
       retries: 3
 
-  flower:
-    image: mher/flower:2.0
-    container_name: flower
-    command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
-    volumes:
-      - /notify/src/core/service
-    restart: always
-    ports:
-      - ${FLOWER_PORT}:${FLOWER_PORT}
-    healthcheck:
-      test: [ "CMD", "celery", "-A", "celery", "status" ]
-      interval: 10s
-      timeout: 10s
-      retries: 3
-    environment:
-      CELERY_BROKER_URL: redis://${REDIS_HOST}
-      CELERY_RESULT_BACKEND: redis://${REDIS_HOST}
-    depends_on:
-      celery_worker:
-        condition: service_healthy
-
+#  flower:
+#    image: mher/flower:2.0
+#    container_name: flower
+#    command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
+#    volumes:
+#      - /auth/src/core/service
+#    restart: always
+#    ports:
+#      - ${FLOWER_PORT}:${FLOWER_PORT}
+#    healthcheck:
+#      test: [ "CMD", "celery", "-A", "celery", "status" ]
+#      interval: 10s
+#      timeout: 10s
+#      retries: 3
+#    depends_on:
+#      celery_worker:
+#        condition: service_healthy
+#
 ##  localstack:
 ##    image: localstack/localstack:latest
 ##    container_name: localstack
