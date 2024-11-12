@@ -31,7 +31,3 @@ class UserTokenPayloadSchema(BaseModel):
 class JWTTokenInfo(BaseModel):
     access_token: str
     token_type: str
-
-
-class NewPassword(BaseModel):
-    new_password: constr(min_length=8)

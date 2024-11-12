@@ -9,7 +9,6 @@ from src.core.dependency import AuthDependency
 from src.core.repository import AuthRepositoryImpl
 from src.core.service import AuthService
 from src.core.schema import (
-    NewPassword,
     JWTTokenInfo,
     LoginUserSchema,
     RegisterUserSchema,
@@ -44,17 +43,17 @@ async def login(
     return await AuthService(AuthRepositoryImpl).login(login_user)
 
 
-@router.post("/auth/jwt/forgot_password", tags=["Auth"])
+@router.post("/auth/jwt/forgot_password", tags=["JWT-Auth"])
 async def forgot_password(user_email: EmailStr):
-    AuthService.forgot_password(email=user_email)
+    await AuthService(AuthRepositoryImpl).forgot_password(email=user_email)
     return {
-        "detail": f"Send message on {user_email}. \
-        If you have entered the wrong address, you should repeat the procedure."
+        "detail": f"Send message on {user_email}. "
+                  f"If you have entered the wrong address, you should repeat the procedure."
     }
 
 
-@router.put("/user/reset_password")
-async def reset_password(token: str, new_password: NewPassword):
+@router.put("/user/reset_password", tags=["User"])
+async def reset_password(token: str, new_password: constr(min_length=8)):
     await AuthService(AuthRepositoryImpl).reset_password(token=token, new_password=new_password)
 
 

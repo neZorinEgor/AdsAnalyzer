@@ -34,8 +34,8 @@ services:
     container_name: auth_mysql
     env_file:
       - ./auth/.env
-    expose:
-      - ${MYSQL_PORT}
+    ports:
+      - ${MYSQL_PORT}:${MYSQL_PORT}
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 15s
@@ -92,30 +92,33 @@ services:
     command: celery -A src.core.service:celery worker --loglevel=info
     depends_on:
       auth_mysql:
-        condition: service_healthy
+         condition: service_healthy
     healthcheck:
       test: [ "CMD", "celery", "-A", "src.core.service:celery", "status" ]
       interval: 10s
       timeout: 10s
       retries: 3
 
-#  flower:
-#    image: mher/flower:2.0
-#    container_name: flower
-#    command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
-#    volumes:
-#      - /auth/src/core/service
-#    restart: always
-#    ports:
-#      - ${FLOWER_PORT}:${FLOWER_PORT}
-#    healthcheck:
-#      test: [ "CMD", "celery", "-A", "celery", "status" ]
-#      interval: 10s
-#      timeout: 10s
-#      retries: 3
-#    depends_on:
-#      celery_worker:
-#        condition: service_healthy
+  flower:
+    image: mher/flower:2.0
+    container_name: flower
+    command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
+    volumes:
+      - /auth/src/core/service
+    restart: always
+    ports:
+      - ${FLOWER_PORT}:${FLOWER_PORT}
+    environment:
+      CELERY_BROKER_URL: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:${RABBITMQ_PORT}
+      CELERY_RESULT_BACKEND: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:${RABBITMQ_PORT}
+    healthcheck:
+      test: [ "CMD", "celery", "-A", "celery", "status" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      celery_worker:
+        condition: service_healthy
 #
 ##  localstack:
 ##    image: localstack/localstack:latest

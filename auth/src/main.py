@@ -5,7 +5,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.router import router as auth_router
-from src.settings import BASE_DIR
 
 
 # Event manager

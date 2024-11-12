@@ -28,7 +28,7 @@ def decode_jwt(
         jwt_token: str,
         public_key: str = settings.auth.public_jwt_key_path.read_text(),
         algorithm: str = settings.auth.algorithm
-):
+) -> dict:
     """
     Decode JWT token by public key
     """
