@@ -6,9 +6,9 @@ from pydantic import EmailStr
 
 from src.core.abstract import ABCAuthRepository
 from src.core.model import UserModel
-from src.core.schema import RegisterUserSchema
+from src.core.schema import RegisterUserSchema, NewPassword
 from src.database import session_factory
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from src.core.utils import hash_password
 
 logger = logging.getLogger("auth.repository")
@@ -42,4 +42,11 @@ class AuthRepositoryImpl(ABCAuthRepository):
         async with session_factory() as session:
             delete_statement = delete(UserModel).where(UserModel.id == user_id)
             await session.execute(delete_statement)
+            await session.commit()
+
+    @staticmethod
+    async def reset_password(email: EmailStr, new_password: NewPassword):
+        async with session_factory() as session:
+            update_password_statement = update(UserModel).where(UserModel.email == email).values(password=new_password)
+            await session.execute(update_password_statement)
             await session.commit()

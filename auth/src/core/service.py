@@ -58,7 +58,9 @@ class AuthService:
         return await self.__repository.delete_user_by_id(user_id)
 
     async def reset_password(self, token: str, new_password: constr(min_length=8)):
-        print(decode_jwt(token))
+        user_email = decode_jwt(token)["email"
+        await self.__repository.
+
 
     @staticmethod
     def forgot_password(email: EmailStr) -> None:

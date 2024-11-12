@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import EmailStr
 
 from src.core.model import UserModel
-from src.core.schema import RegisterUserSchema
+from src.core.schema import RegisterUserSchema, NewPassword
 
 
 class ABCAuthRepository(ABC):
@@ -31,3 +31,8 @@ class ABCAuthRepository(ABC):
         Delete user from `abstract` storage by email
         """
         raise NotImplemented("Method `delete_user_by_id` not implemented.")
+
+
+    @staticmethod
+    @abstractmethod
+    async def reset_password(email: EmailStr, new_password: NewPassword):
