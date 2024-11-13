@@ -23,9 +23,7 @@ class UserTokenPayloadSchema(BaseModel):
     iat: int | float
     exp: int | float
     sub: int
-    email: EmailStr | None
-    is_banned: bool | None = None
-    is_superuser: bool | None = None
+    email: EmailStr | None = None
     jti: str
 
 

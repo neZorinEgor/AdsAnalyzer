@@ -16,6 +16,14 @@ logger = logging.getLogger("auth.repository")
 
 class AuthRepositoryImpl(ABCAuthRepository):
     @staticmethod
+    async def find_user_by_id(user_id: int) -> Optional[UserModel]:
+        async with session_factory() as session:
+            user_by_id_query = select(UserModel).where(UserModel.id == user_id)
+            user = await session.execute(user_by_id_query)
+            user = user.scalar_one_or_none()
+            return user
+
+    @staticmethod
     async def find_user_by_email(email: EmailStr) -> Optional[UserModel]:
         async with session_factory() as session:
             user_by_email_query = select(UserModel).where(UserModel.email == email)
@@ -45,8 +53,8 @@ class AuthRepositoryImpl(ABCAuthRepository):
             await session.commit()
 
     @staticmethod
-    async def reset_password(email: EmailStr, new_password: constr(min_length=8)):
+    async def reset_password_by_email(email: EmailStr, new_password: constr(min_length=8)):
         async with session_factory() as session:
-            update_password_statement = update(UserModel).where(UserModel.email == email).values(password=new_password)
+            update_password_statement = update(UserModel).where(UserModel.email == email).values(password=hash_password(new_password))
             await session.execute(update_password_statement)
             await session.commit()

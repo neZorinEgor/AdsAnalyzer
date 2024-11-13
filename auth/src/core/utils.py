@@ -76,6 +76,8 @@ def create_access_token(user: UserModel) -> str:
     jwt_payload = {
         "sub": user.id,
         "email": user.email,
+        "is_banned": user.is_banned,
+        "is_superuser": user.is_superuser
     }
     return create_jwt(token_type=TokenType.ACCESS, token_data=jwt_payload)
 
@@ -83,7 +85,6 @@ def create_access_token(user: UserModel) -> str:
 def create_refresh_token(user: UserModel) -> str:
     jwt_payload = {
         "sub": user.id,
-        "email": user.email,
     }
     return create_jwt(
         token_type=TokenType.REFRESH,

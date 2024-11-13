@@ -7,13 +7,14 @@ from celery import Celery
 from pydantic import EmailStr, constr
 
 from src.core.abstract import ABCAuthRepository
-from src.core.schema import RegisterUserSchema, LoginUserSchema, JWTTokenInfo
+from src.core.schema import RegisterUserSchema, LoginUserSchema, JWTTokenInfo, UserTokenPayloadSchema
 from src.core import utils as jwt_utils
 from src.core.exceptions import (
     UserAlreadyExistException,
     InvalidCredentialsException,
     UserIsBlockedException,
 )
+from src.core.utils import create_access_token
 from src.settings import settings
 
 logger = logging.getLogger("auth.service")
@@ -26,6 +27,9 @@ class AuthService:
         self.__repository: ABCAuthRepository = repository()
 
     async def register(self, new_user: RegisterUserSchema) -> int:
+        """
+        Register user at platform
+        """
         # 1. Check if the user already exists
         exist_user = await self.__repository.find_user_by_email(new_user.email)
         if exist_user:
@@ -37,6 +41,9 @@ class AuthService:
         return new_user_id
 
     async def login(self, login_user: LoginUserSchema) -> JWTTokenInfo:
+        """
+        Validate user and return JWT-Refresh+Access token
+        """
         # 1. Verify that the user exists and is submitting the required credentials
         user = await self.__repository.find_user_by_email(login_user.email)
         if not user or not jwt_utils.check_password(login_user.password, user.password.encode()):
@@ -51,15 +58,35 @@ class AuthService:
         refresh_token = jwt_utils.create_refresh_token(user)
         return JWTTokenInfo(access_token=access_token, refresh_token=refresh_token)
 
+    async def refresh_jwt(self, user_credentials: UserTokenPayloadSchema):
+        """
+        Generate access token by refresh from credentials
+        """
+        user = await self.__repository.find_user_by_id(user_credentials.sub)
+        return JWTTokenInfo(access_token=create_access_token(user))
+
     async def delete_my_account(self, user_id: int) -> None:
+        """
+        Delete current user by token from db
+        """
         logger.info(f"User by id: {user_id} delete account.")
         return await self.__repository.delete_user_by_id(user_id)
 
     async def reset_password(self, token: str, new_password: constr(min_length=8)) -> None:
+        """
+        Reset password by token
+        """
         user_email = jwt_utils.decode_jwt(token).get("email")
-        await self.__repository.reset_password(email=user_email, new_password=jwt_utils.hash_password(new_password))
+        await self.__repository.reset_password_by_email(
+            email=user_email,
+            new_password=new_password
+        )
+        logger.info(f"User {user_email} change password")
 
     async def forgot_password(self, email: EmailStr) -> None:
+        """
+        Send email on exist user address
+        """
         user = await self.__repository.find_user_by_email(email=email)
         if not user:
             # Do not inform the user if the account exists for security reasons.
@@ -69,11 +96,15 @@ class AuthService:
         email_subject = "Password Reset Request"
         # TODO: HTML message
         content = f'{email_token}'
+        logger.info(f"Send email for reset password at {email}")
         AuthService.__send_email.delay(email_subject, email, content)
 
     @staticmethod
     @celery.task
     def __send_email(email_subject: str, email_to: str, content: str) -> None:
+        """
+        Create email template
+        """
         email = EmailMessage()
         email["Subject"] = email_subject
         email["To"] = email_to

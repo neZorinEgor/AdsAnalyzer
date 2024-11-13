@@ -20,10 +20,15 @@ class ABCAuthRepository(ABC):
 
     @staticmethod
     @abstractmethod
+    async def find_user_by_id(user_id: int) -> Optional[UserModel]:
+        raise NotImplemented("Method `find_user_by_id` not implemented.")
+
+    @staticmethod
+    @abstractmethod
     async def delete_user_by_id(user_id: int):
         raise NotImplemented("Method `delete_user_by_id` not implemented.")
 
     @staticmethod
     @abstractmethod
-    async def reset_password(email: EmailStr, new_password: bytes):
+    async def reset_password_by_email(email: EmailStr, new_password: str):
         raise NotImplemented("Method `reset_password` not implemented.")
