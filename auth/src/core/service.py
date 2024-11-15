@@ -20,7 +20,7 @@ from src.settings import settings
 
 logger = logging.getLogger("auth.service")
 celery = Celery("notifications", broker=settings.redis_url)
-redis = Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, password=settings.REDIS_PASSWORD, db=0)
+redis = Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 
 
 class AuthService:

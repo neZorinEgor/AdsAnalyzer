@@ -5,3 +5,5 @@
 **/jwt-public.pem
 **/.env
 /rabbitmq/
+/frontend/
+/frontend/node_modules/

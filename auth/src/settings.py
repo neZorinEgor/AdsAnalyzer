@@ -30,7 +30,6 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str
     REDIS_PORT: str
-    REDIS_PASSWORD: str
 
     MYSQL_HOST: str
     MYSQL_PORT: str
