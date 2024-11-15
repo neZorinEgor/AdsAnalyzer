@@ -1,3 +1,4 @@
+from datetime import timedelta
 import datetime
 
 import jwt
@@ -23,7 +24,7 @@ def encode_jwt(
         payload: dict,
         private_key: str = settings.auth.PRIVATE_JWT_KEY_PATH.read_text(),
         algorithm: str = settings.auth.ALGORITHM,
-        expire_timedelta: datetime.timedelta = settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES
+        expire_timedelta: timedelta = settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES
 ):
     """
     Encode JWT token by long private key
@@ -67,7 +68,7 @@ def check_password(password: str, hashed_password: bytes) -> bool:
 def create_jwt(
         token_type: str,
         token_data: dict,
-        expire_timedelta: datetime.timedelta = settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES,
+        expire_timedelta: timedelta = settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES,
 
 ) -> str:
     jwt_payload = {TOKEN_TYPE_FIELD: token_type}
@@ -88,6 +89,7 @@ def create_access_token(user: UserModel) -> str:
 def create_refresh_token(user: UserModel) -> str:
     jwt_payload = {
         "sub": user.id,
+        "email": user.email
     }
     return create_jwt(
         token_type=TokenType.REFRESH,

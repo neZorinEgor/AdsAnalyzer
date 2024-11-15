@@ -12,7 +12,7 @@ from src.settings import settings
 # Event manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_admin(email=settings.INITIAL_ADMIN_EMAIL, password=settings.INITIAL_ADMIN_PASSWORD)
+    # await init_admin(email=settings.INITIAL_ADMIN_EMAIL, password=settings.INITIAL_ADMIN_PASSWORD)
     yield
     pass
 
@@ -36,7 +36,8 @@ app.add_middleware(
 )
 
 # Logging configurations
-logging.basicConfig(level=logging.INFO, format='%(levelname)s:     %(asctime)s     %(name)s     %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s]     [%(asctime)s]     [%(name)s]     [%(message)s]')
 logger = logging.getLogger(__name__)
 
 app.include_router(auth_router)
+

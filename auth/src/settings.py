@@ -1,4 +1,4 @@
-import datetime
+from datetime import timedelta
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -10,8 +10,8 @@ class Auth:
     PRIVATE_JWT_KEY_PATH: Path = BASE_DIR / "core" / "certs" / "jwt-private.pem"
     PUBLIC_JWT_KEY_PATH: Path = BASE_DIR / "core" / "certs" / "jwt-public.pem"
     ALGORITHM: str = "RS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: datetime.timedelta = datetime.timedelta(minutes=15)
-    REFRESH_TOKEN_EXPIRE_DAYS: datetime.timedelta = datetime.timedelta(days=7)
+    ACCESS_TOKEN_EXPIRE_MINUTES: timedelta = timedelta(minutes=15)
+    REFRESH_TOKEN_EXPIRE_DAYS: timedelta = timedelta(days=7)
     BAN_MESSAGE: str = "BANNED"
 
 
