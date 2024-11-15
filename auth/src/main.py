@@ -4,13 +4,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.core.utils import init_admin
 from src.core.router import router as auth_router
+from src.settings import settings
 
 
 # Event manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    pass
+    await init_admin(email=settings.INITIAL_ADMIN_EMAIL, password=settings.INITIAL_ADMIN_PASSWORD)
     yield
     pass
 

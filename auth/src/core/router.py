@@ -83,3 +83,20 @@ async def delete_my_account(user_credentials: UserTokenPayloadSchema = Depends(A
     Delete current user account from app
     """
     return await AuthService(AuthRepositoryImpl).delete_my_account(user_credentials.sub)
+
+
+@router.post("/admin/ban/{user_email}", tags=["Admin"])
+async def ban_user_by_email(
+        user_email: EmailStr,
+        user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)
+): 
+    return await AuthService(AuthRepositoryImpl).ban_user_by_email(user_email=user_email, superuser=user_credentials)
+
+
+@router.post("/admin/unban/{user_email}", tags=["Admin"])
+async def unban_user_by_email(
+        user_email: EmailStr,
+        user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)
+):
+    return await AuthService(AuthRepositoryImpl).unban_user_by_email(user_email=user_email, superuser=user_credentials)
+

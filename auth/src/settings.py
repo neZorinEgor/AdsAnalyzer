@@ -7,11 +7,12 @@ BASE_DIR = Path(__file__).parent
 
 
 class Auth:
-    private_jwt_key_path: Path = BASE_DIR / "core" / "certs" / "jwt-private.pem"
-    public_jwt_key_path: Path = BASE_DIR / "core" / "certs" / "jwt-public.pem"
-    algorithm: str = "RS256"
-    access_token_expire_minutes: datetime.timedelta = datetime.timedelta(minutes=15)
-    refresh_token_expire_days: datetime.timedelta = datetime.timedelta(days=7)
+    PRIVATE_JWT_KEY_PATH: Path = BASE_DIR / "core" / "certs" / "jwt-private.pem"
+    PUBLIC_JWT_KEY_PATH: Path = BASE_DIR / "core" / "certs" / "jwt-public.pem"
+    ALGORITHM: str = "RS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: datetime.timedelta = datetime.timedelta(minutes=15)
+    REFRESH_TOKEN_EXPIRE_DAYS: datetime.timedelta = datetime.timedelta(days=7)
+    BAN_MESSAGE: str = "BANNED"
 
 
 class Settings(BaseSettings):
@@ -19,16 +20,17 @@ class Settings(BaseSettings):
 
     APP_HOST: str
     APP_PORT: str
+    INITIAL_ADMIN_EMAIL: str
+    INITIAL_ADMIN_PASSWORD: str
 
     SMTP_EMAIL_FROM: str
     SMTP_HOST: str
     SMTP_PORT: str
     SMTP_PASSWORD: str
 
-    RABBITMQ_PORT: str
-    RABBITMQ_HOST: str
-    RABBITMQ_DEFAULT_USER: str
-    RABBITMQ_DEFAULT_PASS: str
+    REDIS_HOST: str
+    REDIS_PORT: str
+    REDIS_PASSWORD: str
 
     MYSQL_HOST: str
     MYSQL_PORT: str
@@ -45,11 +47,11 @@ class Settings(BaseSettings):
     def mysql_async_url(self):
         return f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
 
-    model_config = SettingsConfigDict(env_file=".env")
+    @property   # for black list and cache
+    def redis_url(self):
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
 
-    @property   # for broker
-    def rabbitmq_url(self):
-        return f"amqp://{self.RABBITMQ_DEFAULT_USER}:{self.RABBITMQ_DEFAULT_PASS}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}"
+    model_config = SettingsConfigDict(env_file=".env")
 
 
 settings = Settings()

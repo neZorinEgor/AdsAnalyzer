@@ -58,3 +58,18 @@ class AuthRepositoryImpl(ABCAuthRepository):
             update_password_statement = update(UserModel).where(UserModel.email == email).values(password=hash_password(new_password))
             await session.execute(update_password_statement)
             await session.commit()
+
+    @staticmethod
+    async def ban_user_by_email(email: EmailStr):
+        async with session_factory() as session:
+            ban_user_statement = update(UserModel).where(UserModel.email == email).values(is_banned=True)
+            await session.execute(ban_user_statement)
+            await session.commit()
+
+    @staticmethod
+    async def unban_user_by_email(email: EmailStr):
+        async with session_factory() as session:
+            ban_user_statement = update(UserModel).where(UserModel.email == email).values(is_banned=False)
+            await session.execute(ban_user_statement)
+            await session.commit()
+

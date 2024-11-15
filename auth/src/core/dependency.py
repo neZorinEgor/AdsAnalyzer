@@ -4,6 +4,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from src.core.exceptions import InvalidTokenException, ExpiredTokenException, InvalidTokenTypeException, UserIsBlockedException
 from src.core.schema import UserTokenPayloadSchema
 from src.core.utils import decode_jwt, TOKEN_TYPE_FIELD, TokenType
+from src.core.service import redis
+from src.settings import settings
 
 http_bearer = HTTPBearer()
 
@@ -21,7 +23,7 @@ class AuthDependency:
         token = credentials.credentials
         try:
             payload = decode_jwt(token)
-            if payload.get("is_banned"):
+            if payload.get("is_banned") or redis.get(payload.get("email")) == settings.auth.BAN_MESSAGE.encode():
                 raise UserIsBlockedException
             AuthDependency.__validate_token_type(payload, token_type)
             return UserTokenPayloadSchema(**payload)

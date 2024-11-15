@@ -24,7 +24,6 @@ class UserTokenPayloadSchema(BaseModel):
     exp: int | float
     sub: int
     email: EmailStr | None = None
-    jti: str
 
 
 class JWTTokenInfo(BaseModel):

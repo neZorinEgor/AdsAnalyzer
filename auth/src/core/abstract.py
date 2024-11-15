@@ -32,3 +32,13 @@ class ABCAuthRepository(ABC):
     @abstractmethod
     async def reset_password_by_email(email: EmailStr, new_password: str):
         raise NotImplemented("Method `reset_password` not implemented.")
+
+    @staticmethod
+    @abstractmethod
+    async def ban_user_by_email(email: EmailStr):
+        raise NotImplemented("Method `ban_user_by_email` not implemented.")
+
+    @staticmethod
+    @abstractmethod
+    async def unban_user_by_email(email: EmailStr):
+        raise NotImplemented("Method `unban_user_by_email` not implemented.")

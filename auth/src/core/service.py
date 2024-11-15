@@ -2,6 +2,7 @@ import logging
 import smtplib
 from datetime import timedelta
 from email.message import EmailMessage
+from redis import Redis
 
 from celery import Celery
 from pydantic import EmailStr, constr
@@ -12,13 +13,14 @@ from src.core import utils as jwt_utils
 from src.core.exceptions import (
     UserAlreadyExistException,
     InvalidCredentialsException,
-    UserIsBlockedException,
+    UserIsBlockedException, UserIsNotSuperException,
 )
 from src.core.utils import create_access_token
 from src.settings import settings
 
 logger = logging.getLogger("auth.service")
-celery = Celery("notifications", broker=settings.rabbitmq_url)
+celery = Celery("notifications", broker=settings.redis_url)
+redis = Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, password=settings.REDIS_PASSWORD, db=0)
 
 
 class AuthService:
@@ -114,3 +116,25 @@ class AuthService:
         with smtplib.SMTP_SSL(host=settings.SMTP_HOST, port=settings.SMTP_PORT) as server:
             server.login(user=settings.SMTP_EMAIL_FROM, password=settings.SMTP_PASSWORD)
             server.send_message(email)
+
+    async def ban_user_by_email(self, user_email: EmailStr, superuser: UserTokenPayloadSchema):
+        superuser = await self.__repository.find_user_by_id(superuser.sub)
+        if not superuser.is_superuser:
+            raise UserIsNotSuperException
+        await self.__repository.ban_user_by_email(user_email)
+        redis.set(name=user_email, value=settings.auth.BAN_MESSAGE, ex=settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+        logger.info(f"Superuser {superuser.email} banned {user_email}")
+        return {
+            "detail": f"User {user_email} successful banned"
+        }
+
+    async def unban_user_by_email(self, user_email: EmailStr, superuser: UserTokenPayloadSchema):
+        superuser = await self.__repository.find_user_by_id(superuser.sub)
+        if not superuser.is_superuser:
+            raise UserIsNotSuperException
+        await self.__repository.unban_user_by_email(user_email)
+        redis.delete(user_email)
+        logger.info(f"Superuser {superuser.email} unbanned {user_email}")
+        return {
+            "detail": f"User {user_email} successful unbanned"
+        }

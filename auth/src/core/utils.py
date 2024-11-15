@@ -5,7 +5,10 @@ import bcrypt
 from enum import StrEnum
 import uuid
 
+from pydantic import EmailStr
+
 from src.core.model import UserModel
+from src.database import session_factory
 from src.settings import settings
 
 TOKEN_TYPE_FIELD = "type"
@@ -18,9 +21,9 @@ class TokenType(StrEnum):
 
 def encode_jwt(
         payload: dict,
-        private_key: str = settings.auth.private_jwt_key_path.read_text(),
-        algorithm: str = settings.auth.algorithm,
-        expire_timedelta: datetime.timedelta = settings.auth.access_token_expire_minutes
+        private_key: str = settings.auth.PRIVATE_JWT_KEY_PATH.read_text(),
+        algorithm: str = settings.auth.ALGORITHM,
+        expire_timedelta: datetime.timedelta = settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES
 ):
     """
     Encode JWT token by long private key
@@ -37,8 +40,8 @@ def encode_jwt(
 
 def decode_jwt(
         jwt_token: str,
-        public_key: str = settings.auth.public_jwt_key_path.read_text(),
-        algorithm: str = settings.auth.algorithm
+        public_key: str = settings.auth.PUBLIC_JWT_KEY_PATH.read_text(),
+        algorithm: str = settings.auth.ALGORITHM
 ) -> dict:
     """
     Decode JWT token by public key
@@ -64,7 +67,7 @@ def check_password(password: str, hashed_password: bytes) -> bool:
 def create_jwt(
         token_type: str,
         token_data: dict,
-        expire_timedelta: datetime.timedelta = settings.auth.access_token_expire_minutes,
+        expire_timedelta: datetime.timedelta = settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES,
 
 ) -> str:
     jwt_payload = {TOKEN_TYPE_FIELD: token_type}
@@ -89,5 +92,12 @@ def create_refresh_token(user: UserModel) -> str:
     return create_jwt(
         token_type=TokenType.REFRESH,
         token_data=jwt_payload,
-        expire_timedelta=settings.auth.refresh_token_expire_days
+        expire_timedelta=settings.auth.REFRESH_TOKEN_EXPIRE_DAYS
     )
+
+
+async def init_admin(email: EmailStr, password):
+    async with session_factory() as session:
+        admin = UserModel(email=email, password=hash_password(password), is_superuser=True)
+        session.add(admin)
+        await session.commit()
