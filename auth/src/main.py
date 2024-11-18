@@ -8,11 +8,16 @@ from src.core.utils import init_admin
 from src.core.router import router as auth_router
 from src.settings import settings
 
+# Logging configurations
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] [%(asctime)s] [%(name)s] [%(message)s]')
+logger = logging.getLogger(__name__)
+
 
 # Event manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # await init_admin(email=settings.INITIAL_ADMIN_EMAIL, password=settings.INITIAL_ADMIN_PASSWORD)
+    logger.info("Init admin account")
+    await init_admin(email=settings.INITIAL_ADMIN_EMAIL, password=settings.INITIAL_ADMIN_PASSWORD)
     yield
     pass
 
@@ -34,10 +39,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
-
-# Logging configurations
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s]     [%(asctime)s]     [%(name)s]     [%(message)s]')
-logger = logging.getLogger(__name__)
 
 app.include_router(auth_router)
 

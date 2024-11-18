@@ -5,7 +5,6 @@ from src.core.exceptions import InvalidTokenException, ExpiredTokenException, In
 from src.core.schema import UserTokenPayloadSchema
 from src.core.utils import decode_jwt, TOKEN_TYPE_FIELD, TokenType
 from src.core.service import redis
-from src.settings import settings
 
 http_bearer = HTTPBearer()
 
@@ -23,7 +22,7 @@ class AuthDependency:
         token = credentials.credentials
         try:
             payload = decode_jwt(token)
-            if payload.get("is_banned") or redis.get(payload.get("email")) == settings.auth.BAN_MESSAGE.encode():
+            if payload.get("is_banned") or redis.exists(payload.get("email")):
                 raise UserIsBlockedException
             AuthDependency.__validate_token_type(payload, token_type)
             return UserTokenPayloadSchema(**payload)

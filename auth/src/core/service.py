@@ -117,24 +117,24 @@ class AuthService:
             server.login(user=settings.SMTP_EMAIL_FROM, password=settings.SMTP_PASSWORD)
             server.send_message(email)
 
-    async def ban_user_by_email(self, user_email: EmailStr, superuser: UserTokenPayloadSchema):
-        superuser = await self.__repository.find_user_by_id(superuser.sub)
-        if not superuser.is_superuser:
+    async def ban_user_by_email(self, email_for_ban: EmailStr, producer: UserTokenPayloadSchema):
+        producer = await self.__repository.find_user_by_id(producer.sub)
+        if not producer.is_superuser:
             raise UserIsNotSuperException
-        await self.__repository.ban_user_by_email(user_email)
-        redis.set(name=user_email, value=settings.auth.BAN_MESSAGE, ex=settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-        logger.info(f"Superuser {superuser.email} banned {user_email}")
+        await self.__repository.ban_user_by_email(email_for_ban)
+        redis.set(name=email_for_ban, value=settings.auth.BAN_MESSAGE, ex=settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+        logger.info(f"Superuser {producer.email} banned {email_for_ban}")
         return {
-            "detail": f"User {user_email} successful banned"
+            "detail": f"User {email_for_ban} successful banned"
         }
 
-    async def unban_user_by_email(self, user_email: EmailStr, superuser: UserTokenPayloadSchema):
-        superuser = await self.__repository.find_user_by_id(superuser.sub)
-        if not superuser.is_superuser:
+    async def unban_user_by_email(self, email_for_unban: EmailStr, producer: UserTokenPayloadSchema):
+        producer = await self.__repository.find_user_by_id(producer.sub)
+        if not producer.is_superuser:
             raise UserIsNotSuperException
-        await self.__repository.unban_user_by_email(user_email)
-        redis.delete(user_email)
-        logger.info(f"Superuser {superuser.email} unbanned {user_email}")
+        await self.__repository.unban_user_by_email(email_for_unban)
+        redis.delete(email_for_unban)
+        logger.info(f"Superuser {producer.email} unbanned {email_for_unban}")
         return {
-            "detail": f"User {user_email} successful unbanned"
+            "detail": f"User {email_for_unban} successful unbanned"
         }

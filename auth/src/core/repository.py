@@ -72,4 +72,3 @@ class AuthRepositoryImpl(ABCAuthRepository):
             ban_user_statement = update(UserModel).where(UserModel.email == email).values(is_banned=False)
             await session.execute(ban_user_statement)
             await session.commit()
-
