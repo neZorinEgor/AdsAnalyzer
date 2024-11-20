@@ -124,9 +124,6 @@ class AuthService:
         await self.__repository.ban_user_by_email(email_for_ban)
         redis.set(name=email_for_ban, value=settings.auth.BAN_MESSAGE, ex=settings.auth.ACCESS_TOKEN_EXPIRE_MINUTES)
         logger.info(f"Superuser {producer.email} banned {email_for_ban}")
-        return {
-            "detail": f"User {email_for_ban} successful banned"
-        }
 
     async def unban_user_by_email(self, email_for_unban: EmailStr, producer: UserTokenPayloadSchema):
         producer = await self.__repository.find_user_by_id(producer.sub)
@@ -135,6 +132,3 @@ class AuthService:
         await self.__repository.unban_user_by_email(email_for_unban)
         redis.delete(email_for_unban)
         logger.info(f"Superuser {producer.email} unbanned {email_for_unban}")
-        return {
-            "detail": f"User {email_for_unban} successful unbanned"
-        }

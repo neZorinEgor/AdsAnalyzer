@@ -90,7 +90,10 @@ async def ban_user_by_email(
         user_email: EmailStr,
         user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)
 ): 
-    return await AuthService(AuthRepositoryImpl).ban_user_by_email(email_for_ban=user_email, producer=user_credentials)
+    await AuthService(AuthRepositoryImpl).ban_user_by_email(email_for_ban=user_email, producer=user_credentials)
+    return {
+        "detail": f"User {user_email} successful banned"
+    }
 
 
 @router.post("/admin/unban/{user_email}", tags=["Admin"])
@@ -98,5 +101,8 @@ async def unban_user_by_email(
         user_email: EmailStr,
         user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)
 ):
-    return await AuthService(AuthRepositoryImpl).unban_user_by_email(email_for_unban=user_email, producer=user_credentials)
+    await AuthService(AuthRepositoryImpl).unban_user_by_email(email_for_unban=user_email, producer=user_credentials)
+    return {
+        "detail": f"User {user_email} successful unbanned"
+    }
 
