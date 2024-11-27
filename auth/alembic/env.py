@@ -20,7 +20,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 from src.database import Base
-from src.auth.model import UserModel
+from src.auth.models import UserModel
 
 target_metadata = Base.metadata
 

@@ -8,7 +8,7 @@ import uuid
 
 from pydantic import EmailStr
 
-from src.auth.model import UserModel
+from src.auth.models import UserModel
 from src.database import session_factory
 from src.settings import settings
 

@@ -4,9 +4,9 @@ from typing import Optional
 
 from pydantic import EmailStr, constr
 
-from src.auth.abstract import ABCAuthRepository
-from src.auth.model import UserModel
-from src.auth.schema import RegisterUserSchema
+from src.auth.core import IAuthRepository
+from src.auth.models import UserModel
+from src.auth.schemas import RegisterUserSchema
 from src.database import session_factory
 from sqlalchemy import select, delete, update
 from src.auth.utils import hash_password
@@ -14,7 +14,7 @@ from src.auth.utils import hash_password
 logger = logging.getLogger("auth.repository")
 
 
-class AuthRepositoryImpl(ABCAuthRepository):
+class AuthRepositoryImpl(IAuthRepository):
     @staticmethod
     async def find_user_by_id(user_id: int) -> Optional[UserModel]:
         async with session_factory() as session:

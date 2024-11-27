@@ -3,11 +3,11 @@ from typing import Optional
 
 from pydantic import EmailStr, constr
 
-from src.auth.model import UserModel
-from src.auth.schema import RegisterUserSchema
+from src.auth.models import UserModel
+from src.auth.schemas import RegisterUserSchema
 
 
-class ABCAuthRepository(ABC):
+class IAuthRepository(ABC):
     @staticmethod
     @abstractmethod
     async def save_user(user: RegisterUserSchema) -> int:

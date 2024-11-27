@@ -7,8 +7,8 @@ from redis import Redis
 from celery import Celery
 from pydantic import EmailStr, constr
 
-from src.auth.abstract import ABCAuthRepository
-from src.auth.schema import RegisterUserSchema, LoginUserSchema, JWTTokenInfo, UserTokenPayloadSchema
+from src.auth.core import IAuthRepository
+from src.auth.schemas import RegisterUserSchema, LoginUserSchema, JWTTokenInfo, UserTokenPayloadSchema
 from src.auth import utils as jwt_utils
 from src.auth.exceptions import (
     UserAlreadyExistException,
@@ -26,7 +26,7 @@ redis = Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 class AuthService:
     def __init__(self, repository):
         # Dependency inversion, so as not to depend on implementation ;)
-        self.__repository: ABCAuthRepository = repository()
+        self.__repository: IAuthRepository = repository()
 
     async def register(self, new_user: RegisterUserSchema) -> int:
         """

@@ -7,7 +7,7 @@ from src.auth.dependency import AuthDependency
 
 from src.auth.repository import AuthRepositoryImpl
 from src.auth.service import AuthService
-from src.auth.schema import (
+from src.auth.schemas import (
     JWTTokenInfo,
     LoginUserSchema,
     RegisterUserSchema,
