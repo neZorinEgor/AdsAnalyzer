@@ -3,8 +3,8 @@ from typing import Optional
 
 from pydantic import EmailStr, constr
 
-from src.core.model import UserModel
-from src.core.schema import RegisterUserSchema
+from src.auth.model import UserModel
+from src.auth.schema import RegisterUserSchema
 
 
 class ABCAuthRepository(ABC):

@@ -4,12 +4,12 @@ from typing import Optional
 
 from pydantic import EmailStr, constr
 
-from src.core.abstract import ABCAuthRepository
-from src.core.model import UserModel
-from src.core.schema import RegisterUserSchema
+from src.auth.abstract import ABCAuthRepository
+from src.auth.model import UserModel
+from src.auth.schema import RegisterUserSchema
 from src.database import session_factory
 from sqlalchemy import select, delete, update
-from src.core.utils import hash_password
+from src.auth.utils import hash_password
 
 logger = logging.getLogger("auth.repository")
 

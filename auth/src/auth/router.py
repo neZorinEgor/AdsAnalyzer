@@ -3,11 +3,11 @@ import logging
 from fastapi import APIRouter, Depends
 from pydantic import EmailStr, constr
 
-from src.core.dependency import AuthDependency
+from src.auth.dependency import AuthDependency
 
-from src.core.repository import AuthRepositoryImpl
-from src.core.service import AuthService
-from src.core.schema import (
+from src.auth.repository import AuthRepositoryImpl
+from src.auth.service import AuthService
+from src.auth.schema import (
     JWTTokenInfo,
     LoginUserSchema,
     RegisterUserSchema,

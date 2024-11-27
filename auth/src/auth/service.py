@@ -7,15 +7,15 @@ from redis import Redis
 from celery import Celery
 from pydantic import EmailStr, constr
 
-from src.core.abstract import ABCAuthRepository
-from src.core.schema import RegisterUserSchema, LoginUserSchema, JWTTokenInfo, UserTokenPayloadSchema
-from src.core import utils as jwt_utils
-from src.core.exceptions import (
+from src.auth.abstract import ABCAuthRepository
+from src.auth.schema import RegisterUserSchema, LoginUserSchema, JWTTokenInfo, UserTokenPayloadSchema
+from src.auth import utils as jwt_utils
+from src.auth.exceptions import (
     UserAlreadyExistException,
     InvalidCredentialsException,
     UserIsBlockedException, UserIsNotSuperException,
 )
-from src.core.utils import create_access_token
+from src.auth.utils import create_access_token
 from src.settings import settings
 
 logger = logging.getLogger("auth.service")

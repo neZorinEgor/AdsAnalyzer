@@ -7,8 +7,8 @@ BASE_DIR = Path(__file__).parent
 
 
 class Auth:
-    PRIVATE_JWT_KEY_PATH: Path = BASE_DIR / "core" / "certs" / "jwt-private.pem"
-    PUBLIC_JWT_KEY_PATH: Path = BASE_DIR / "core" / "certs" / "jwt-public.pem"
+    PRIVATE_JWT_KEY_PATH: Path = BASE_DIR / "auth" / "certs" / "jwt-private.pem"
+    PUBLIC_JWT_KEY_PATH: Path = BASE_DIR / "auth" / "certs" / "jwt-public.pem"
     ALGORITHM: str = "RS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: timedelta = timedelta(minutes=15)
     REFRESH_TOKEN_EXPIRE_DAYS: timedelta = timedelta(days=7)
@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     MYSQL_DATABASE: str
     MYSQL_PASSWORD: str
     MYSQL_ROOT_PASSWORD: str
+
+    FLOWER_USERNAME: str
+    FLOWER_PASSWORD: str
+    FLOWER_PORT: str
 
     @property   # for migration
     def mysql_url(self):

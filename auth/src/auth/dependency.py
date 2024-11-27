@@ -1,10 +1,10 @@
 from jwt.exceptions import DecodeError, ExpiredSignatureError
 from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from src.core.exceptions import InvalidTokenException, ExpiredTokenException, InvalidTokenTypeException, UserIsBlockedException
-from src.core.schema import UserTokenPayloadSchema
-from src.core.utils import decode_jwt, TOKEN_TYPE_FIELD, TokenType
-from src.core.service import redis
+from src.auth.exceptions import InvalidTokenException, ExpiredTokenException, InvalidTokenTypeException, UserIsBlockedException
+from src.auth.schema import UserTokenPayloadSchema
+from src.auth.utils import decode_jwt, TOKEN_TYPE_FIELD, TokenType
+from src.auth.service import redis
 
 http_bearer = HTTPBearer()
 

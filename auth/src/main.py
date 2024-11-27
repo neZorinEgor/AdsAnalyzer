@@ -4,8 +4,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.core.utils import init_admin
-from src.core.router import router as auth_router
+from src.auth.utils import init_admin
+from src.auth.router import router as auth_router
 from src.settings import settings
 
 # Logging configurations
@@ -22,7 +22,8 @@ async def lifespan(app: FastAPI):
     pass
 
 app = FastAPI(
-    title="JWT-Authentication microservice",
+    title="📚 TrainME",
+    description="`No-code` platform for automating the process of building and deploying machine learning models ",
     lifespan=lifespan,
     docs_url="/docs",
     version="1.0.0",
