@@ -19,8 +19,8 @@ services:
     container_name: mysql
     env_file:
       - .env
-    expose:
-      - ${MYSQL_PORT}
+    ports:
+      - ${MYSQL_PORT}:${MYSQL_PORT}
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 15s

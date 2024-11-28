@@ -12,3 +12,7 @@ bcrypt==4.2.0
 celery==5.4.0
 flower==2.0.1
 redis==4.6.0
+pandas==2.2.3
+scikit-learn==1.5.2
+joblib==1.4.2
+lightgbm==4.5.0
