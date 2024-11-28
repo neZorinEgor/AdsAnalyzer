@@ -42,3 +42,8 @@ class IAuthRepository(ABC):
     @abstractmethod
     async def unban_user_by_email(email: EmailStr):
         raise NotImplemented("Method `unban_user_by_email` not implemented.")
+
+    @staticmethod
+    @abstractmethod
+    async def init_admin(email: EmailStr, password):
+        raise NotImplemented("Method `init_admin` not implemented.")

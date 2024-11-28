@@ -51,7 +51,7 @@ services:
     container_name: celery_worker
     command: celery -A src.auth.service:celery worker --loglevel=info
     depends_on:
-      mysql:
+      trainme:
          condition: service_healthy
     healthcheck:
       test: [ "CMD", "celery", "-A", "src.auth.service:celery", "status" ]

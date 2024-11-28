@@ -1,6 +1,6 @@
-from fastapi import UploadFile, File
+from fastapi import UploadFile
 
-from src.ml.core import IMLRepository
+from src.ml.clusterization.core import IMLRepository
 
 
 class MLService:
@@ -9,5 +9,5 @@ class MLService:
             raise TypeError(f"Expected {IMLRepository}, got {type(repository)}")
         self.__repository: IMLRepository = repository
 
-    async def create_clusterization_model(self, endpoint_path: str, dataset: UploadFile = File(...)):
+    async def create_clusterization_model(self, owner: int, endpoint_path: str, dataset: UploadFile):
         pass

@@ -97,9 +97,3 @@ def create_refresh_token(user: UserModel) -> str:
         expire_timedelta=settings.auth.REFRESH_TOKEN_EXPIRE_DAYS
     )
 
-
-async def init_admin(email: EmailStr, password):
-    async with session_factory() as session:
-        admin = UserModel(email=email, password=hash_password(password), is_superuser=True)
-        session.add(admin)
-        await session.commit()

@@ -14,7 +14,7 @@ from src.auth.utils import hash_password
 logger = logging.getLogger("auth.repository")
 
 
-class AuthRepositoryImpl(IAuthRepository):
+class AuthRepository(IAuthRepository):
     @staticmethod
     async def find_user_by_id(user_id: int) -> Optional[UserModel]:
         async with session_factory() as session:
@@ -72,3 +72,14 @@ class AuthRepositoryImpl(IAuthRepository):
             ban_user_statement = update(UserModel).where(UserModel.email == email).values(is_banned=False)
             await session.execute(ban_user_statement)
             await session.commit()
+
+    @staticmethod
+    async def init_admin(email: EmailStr, password):
+        async with session_factory() as session:
+            admin = UserModel(email=email, password=hash_password(password), is_superuser=True)
+            admin_exist_query = select(UserModel).where(UserModel.email == email)
+            admin_exist_query = await session.execute(admin_exist_query)
+            admin_exist_query = admin_exist_query.scalar_one_or_none()
+            if not admin_exist_query:
+                session.add(admin)
+                await session.commit()

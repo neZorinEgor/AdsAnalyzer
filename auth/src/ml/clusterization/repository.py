@@ -1,5 +1,5 @@
 from src.database import session_factory
-from src.ml.core import IMLRepository
+from src.ml.clusterization.core import IMLRepository
 
 
 class MLRepository(IMLRepository):

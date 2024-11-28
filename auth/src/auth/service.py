@@ -132,3 +132,6 @@ class AuthService:
         await self.__repository.unban_user_by_email(email_for_unban)
         redis.delete(email_for_unban)
         logger.info(f"Superuser {producer.email} unbanned {email_for_unban}")
+
+    async def init_admin(self, email: EmailStr, password):
+        await self.__repository.init_admin(email, password)
