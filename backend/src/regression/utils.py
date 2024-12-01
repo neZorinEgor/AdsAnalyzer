@@ -16,7 +16,7 @@ class RegressionUtils:
         dataset_extension = dataset.filename.split(".")[-1].lower()
         if dataset_extension in ["csv"]:
             return pd.read_csv(dataset.file)
-        if dataset_extension in ["xlsx", "xlsm", "xlsb", "xltx", "xltm", "xls", "xlt", "xls", "xml", "xml", "xlam", "xla", "xlw", "xlr"]:
+        if dataset_extension in ["xlsx", "xlsm", "xlsb", "xltx", "xltm", "xls", "xlt", "xls", "xml", "xml", "slam", "xla", "xlw", "xlr"]:
             return pd.read_excel(dataset.file)
 
     @staticmethod

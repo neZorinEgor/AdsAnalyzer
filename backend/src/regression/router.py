@@ -27,7 +27,8 @@ def create_regression_model(
     :raises ValueError: If the dataset fails validation.
     """
     RegressionUtils.validate_dataset(dataset)
-    RegressionService.create_regression_model(endpoint_path, label_name, dataset)
+    result = RegressionService.create_regression_model(endpoint_path, label_name, dataset)
+    print(result)
     return MessageResponse(
         status=201,
         message="Algorithm is being trained in the background."

@@ -1,12 +1,13 @@
 from datetime import timedelta
 from pathlib import Path
 
+from lightgbm import LGBMRegressor
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).parent
 
 
-class Auth:
+class _Auth:
     PRIVATE_JWT_KEY_PATH: Path = BASE_DIR / "auth" / "certs" / "jwt-private.pem"
     PUBLIC_JWT_KEY_PATH: Path = BASE_DIR / "auth" / "certs" / "jwt-public.pem"
     ALGORITHM: str = "RS256"
@@ -15,8 +16,13 @@ class Auth:
     BAN_MESSAGE: str = "BANNED"
 
 
+class _MachineLearning:
+    base_regression_algorithm: LGBMRegressor = LGBMRegressor
+
+
 class Settings(BaseSettings):
-    auth: Auth = Auth()
+    auth: _Auth = _Auth()
+    ml: _MachineLearning = _MachineLearning()
 
     APP_HOST: str
     APP_PORT: str
@@ -42,9 +48,14 @@ class Settings(BaseSettings):
     FLOWER_PASSWORD: str
     FLOWER_PORT: str
 
-    @property   # for migration
-    def mysql_url(self):
-        return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
+    S3_HOST: str
+    S3_BUCKETS: str
+    EDGE_PORT: str
+    SERVICES: str
+    DEFAULT_REGION: str
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+    NGINX_HTTP_PORT: str
 
     @property   # for application
     def mysql_async_url(self):

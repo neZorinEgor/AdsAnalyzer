@@ -3,15 +3,16 @@ uvicorn==0.30.1
 alembic==1.13.1
 pydantic==2.7.4
 pydantic-settings==2.3.3
-pymysql==1.1.1
 aiomysql==0.2.0
 SQLAlchemy==2.0.31
 pyjwt==2.8.0
 cryptography==42.0.8
 bcrypt==4.2.0
+aiobotocore==2.15.2
 celery==5.4.0
 flower==2.0.1
 redis==4.6.0
+# data-sciense dependency
 pandas==2.2.3
 scikit-learn==1.5.2
 joblib==1.4.2

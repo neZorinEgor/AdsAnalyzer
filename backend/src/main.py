@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI): # noqa
     logger.info("Init admin account")
-    await AuthService(AuthRepository).init_admin(
-        email=settings.INITIAL_ADMIN_EMAIL,
-        password=settings.INITIAL_ADMIN_PASSWORD
-    )
+    # await AuthService(AuthRepository).init_admin(
+    #     email=settings.INITIAL_ADMIN_EMAIL,
+    #     password=settings.INITIAL_ADMIN_PASSWORD
+    # )
     yield
     pass
 

@@ -1,6 +1,16 @@
 version: "3.9"
 
 services:
+  s3:
+    container_name: s3
+    image: localstack/localstack:latest
+    ports:
+      - ${EDGE_PORT}:${EDGE_PORT}
+    volumes:
+      - localstack-data:/var/lib/localstack
+    env_file:
+      - .env
+
   redis:
     image: redis:8.0-M02-bookworm
     container_name: redis
@@ -80,5 +90,17 @@ services:
       celery_worker:
         condition: service_healthy
 
-#  nginx:
-#    container_name: nginx
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    depends_on:
+      trainme:
+        condition: service_healthy
+    ports:
+      - ${NGINX_HTTP_PORT}:${NGINX_HTTP_PORT}
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+
+volumes:
+  localstack-data:
