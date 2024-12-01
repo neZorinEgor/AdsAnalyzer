@@ -6,8 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.auth.repository import AuthRepository
 from src.auth.router import router as auth_router
-from src.ml.clusterization.router import router as clusterization_router
-from src.ml.regression.router import router as regression_router
+from src.regression.router import router as regression_router
 from src.auth.service import AuthService
 from src.settings import settings
 
@@ -56,4 +55,3 @@ def healthcheck():
 
 app.include_router(auth_router)
 app.include_router(regression_router)
-app.include_router(clusterization_router)

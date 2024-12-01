@@ -2,9 +2,9 @@ from fastapi import APIRouter, UploadFile, File, Depends, status
 
 from src.auth.dependency import AuthDependency
 from src.auth.schemas import UserTokenPayloadSchema
-from src.ml.regression.schemas import MessageResponse
-from src.ml.regression.service import RegressionService
-from src.ml.regression.utils import RegressionUtils
+from src.regression.schemas import MessageResponse
+from src.regression.service import RegressionService
+from src.regression.utils import RegressionUtils
 
 router = APIRouter(prefix="/ml/regression", tags=["Regression"])
 
