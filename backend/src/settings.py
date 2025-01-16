@@ -11,7 +11,7 @@ class _Auth:
     PUBLIC_JWT_KEY_PATH: Path = BASE_DIR / "auth" / "certs" / "jwt-public.pem"
     ALGORITHM: str = "RS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: timedelta = timedelta(minutes=15)
-    REFRESH_TOKEN_EXPIRE_DAYS: timedelta = timedelta(days=7)
+    REFRESH_TOKEN_EXPIRE_DAYS: timedelta = timedelta(days=1)
     BAN_MESSAGE: str = "BANNED"
 
 
@@ -44,9 +44,10 @@ class Settings(BaseSettings):
     DEFAULT_REGION: str
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
+
     NGINX_HTTP_PORT: str
 
-    @property   # for application
+    @property
     def mysql_async_url(self):
         return f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
 
@@ -54,7 +55,11 @@ class Settings(BaseSettings):
     def redis_url(self):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
 
+    @property
+    def s3_endpoint_url(self):
+        return f"http://{settings.S3_HOST}:{settings.EDGE_PORT}"
+
     model_config = SettingsConfigDict(env_file=".env")
 
 
-settings = Settings()
+settings = Settings() # noqa

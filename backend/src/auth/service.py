@@ -2,7 +2,7 @@ import logging
 from redis import Redis
 
 from celery import Celery
-from pydantic import EmailStr, constr
+from pydantic import EmailStr
 
 from src.auth.core import IAuthRepository
 from src.auth.schemas import RegisterUserSchema, LoginUserSchema, JWTTokenInfo, UserTokenPayloadSchema
@@ -17,7 +17,7 @@ from src.auth.utils import create_access_token
 from src.settings import settings
 
 logger = logging.getLogger()
-celery = Celery("notifications", broker=settings.redis_url)
+# celery = Celery("notifications", broker=settings.redis_url)
 redis = Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 
 
@@ -26,7 +26,7 @@ class AuthService:
         # Dependency inversion, so as not to depend on implementation ;)
         self.__repository: IAuthRepository = repository()
 
-    async def register(self, new_user: RegisterUserSchema) -> int:
+    async def register(self, new_user: RegisterUserSchema):
         """
         Register user at platform
         """
@@ -37,8 +37,8 @@ class AuthService:
             raise user_already_exist_exception
         # 2. Saving the user
         logger.info(f"Successful save new user {new_user.email}")
-        new_user_id = await self.__repository.save_user(new_user)
-        return new_user_id
+        await self.__repository.save_user(new_user)
+        return await self.login(LoginUserSchema(**new_user.__dict))
 
     async def login(self, login_user: LoginUserSchema) -> JWTTokenInfo:
         """

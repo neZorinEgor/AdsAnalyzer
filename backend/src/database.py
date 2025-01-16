@@ -4,6 +4,7 @@ from sqlalchemy import String
 from src.settings import settings
 from typing import Annotated
 
+
 engine = create_async_engine(
     url=settings.mysql_async_url,
     echo=False,

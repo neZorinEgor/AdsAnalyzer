@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Depends
-from pydantic import EmailStr, constr
+from pydantic import EmailStr
 
 from src.auth.dependency import AuthDependency
 
@@ -12,41 +12,37 @@ from src.auth.schemas import (
     LoginUserSchema,
     RegisterUserSchema,
     UserTokenPayloadSchema,
-    UserSuccessfulRegisterMessage,
 )
 
 router = APIRouter()
 logger = logging.getLogger("auth.router")
 
 
-@router.post("/auth/jwt/register", response_model=UserSuccessfulRegisterMessage, status_code=201, tags=["JWT-Auth"])
+@router.post(path="/auth/jwt/register", response_model=JWTTokenInfo, status_code=201, tags=["JWT-Auth"])
 async def register(
         register_user: RegisterUserSchema,
-):
+) -> JWTTokenInfo:
     """
     Endpoint for register user and save this credentials in database
     """
-    logger.info(f"Received register request for {register_user.email}")
-    new_user_id = await AuthService(AuthRepository).register(register_user)
-    return UserSuccessfulRegisterMessage(message="Successful register user", user_id=new_user_id)
+    return await AuthService(repository=AuthRepository).register(register_user)
 
 
-@router.post("/auth/jwt/login", response_model=JWTTokenInfo, status_code=200, tags=["JWT-Auth"])
+@router.post(path="/auth/jwt/login", response_model=JWTTokenInfo, status_code=200, tags=["JWT-Auth"])
 async def login(
     login_user: LoginUserSchema,
 ) -> JWTTokenInfo:
     """
     Endpoint for generate access jwt token for exist user
     """
-    logger.info(f"Received logging request for {login_user.email}")
-    return await AuthService(AuthRepository).login(login_user)
+    return await AuthService(repository=AuthRepository).login(login_user)
 
 
-@router.post("/auth/jwt/refresh", response_model=JWTTokenInfo, response_model_exclude_none=True, tags=["JWT-Auth"])
+@router.post(path="/auth/jwt/refresh", response_model=JWTTokenInfo, response_model_exclude_none=True, tags=["JWT-Auth"])
 async def refresh_jwt(
         user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user_for_refresh),
 ) -> JWTTokenInfo:
-    return await AuthService(AuthRepository).refresh_jwt(user_credentials)
+    return await AuthService(repository=AuthRepository).refresh_jwt(user_credentials)
 
 
 @router.get(path="/user/me", response_model=UserTokenPayloadSchema, status_code=200, tags=["User"])
@@ -57,25 +53,31 @@ async def get_my_credentials(user_credentials: UserTokenPayloadSchema = Depends(
     return user_credentials
 
 
-@router.delete("/user/delete_my_account", tags=["User"])
+@router.delete(path="/user/delete_my_account", tags=["User"])
 async def delete_my_account(user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)):
     """
     Delete current user account from app
     """
-    return await AuthService(AuthRepository).delete_my_account(user_credentials.email)
+    return await AuthService(repository=AuthRepository).delete_my_account(user_credentials.email)
 
 
-@router.post("/admin/ban/{user_email}", tags=["Admin"])
+@router.post(path="/admin/ban/{user_email}", tags=["Admin"])
 async def ban_user_by_email(
-        user_email: EmailStr,
-        user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)
-): 
-    return await AuthService(AuthRepository).ban_user_by_email(email_for_ban=user_email, producer=user_credentials)
-
-
-@router.post("/admin/unban/{user_email}", tags=["Admin"])
-async def unban_user_by_email(
-        user_email: EmailStr,
+        email_for_ban: EmailStr,
         user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)
 ):
-    return await AuthService(AuthRepository).unban_user_by_email(email_for_unban=user_email, producer=user_credentials)
+    """
+    Ban user by email.
+    """
+    return await AuthService(repository=AuthRepository).ban_user_by_email(email_for_ban=email_for_ban, producer=user_credentials)
+
+
+@router.post(path="/admin/unban/{user_email}", tags=["Admin"])
+async def unban_user_by_email(
+        email_for_unban: EmailStr,
+        user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)
+):
+    """
+    Unban user by email.
+    """
+    return await AuthService(repository=AuthRepository).unban_user_by_email(email_for_unban=email_for_unban, producer=user_credentials)
