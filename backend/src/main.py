@@ -6,26 +6,26 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.auth.repository import AuthRepository
 from src.auth.router import router as auth_router
-from src.regression.router import router as regression_router
 from src.auth.service import AuthService
 from src.settings import settings
+from src.s3 import s3_client
 
 # Logging configurations
-logging.basicConfig(
-    level=logging.INFO, format='[%(levelname)s] [%(asctime)s] [%(name)s] [%(message)s]')
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 # Event manager
 @asynccontextmanager
-async def lifespan(app: FastAPI): # noqa
-    logger.info("Init admin account")
-    # await AuthService(AuthRepository).init_admin(
-    #     email=settings.INITIAL_ADMIN_EMAIL,
-    #     password=settings.INITIAL_ADMIN_PASSWORD
-    # )
+async def lifespan(application: FastAPI):
+    await s3_client.create_bucket(bucket_name=settings.S3_BUCKETS)
+    await AuthService(AuthRepository).init_admin(
+        email=settings.INITIAL_ADMIN_EMAIL,
+        password=settings.INITIAL_ADMIN_PASSWORD
+    )
     yield
     pass
+
 
 app = FastAPI(
     title="📚 TrainME",
@@ -35,8 +35,10 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
 # Origins url's for CORS
 origins = ["*"]
+
 
 # Cors middleware
 app.add_middleware(
@@ -54,4 +56,3 @@ def healthcheck():
 
 
 app.include_router(auth_router)
-app.include_router(regression_router)
