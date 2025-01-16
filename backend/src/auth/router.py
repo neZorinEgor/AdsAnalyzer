@@ -70,7 +70,7 @@ async def ban_user_by_email(
         user_email: EmailStr,
         user_credentials: UserTokenPayloadSchema = Depends(AuthDependency.get_current_user)
 ): 
-    await AuthService(AuthRepository).ban_user_by_email(email_for_ban=user_email, producer=user_credentials)
+    return await AuthService(AuthRepository).ban_user_by_email(email_for_ban=user_email, producer=user_credentials)
 
 
 @router.post("/admin/unban/{user_email}", tags=["Admin"])

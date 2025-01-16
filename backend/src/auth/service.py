@@ -10,12 +10,13 @@ from src.auth import utils as jwt_utils
 from src.auth.exceptions import (
     user_already_exist_exception,
     invalid_credentials_exception,
-    user_is_blocked_exception, user_is_not_super_exception,
+    user_is_blocked_exception,
+    user_is_not_super_exception
 )
 from src.auth.utils import create_access_token
 from src.settings import settings
 
-logger = logging.getLogger("auth.service")
+logger = logging.getLogger()
 celery = Celery("notifications", broker=settings.redis_url)
 redis = Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 

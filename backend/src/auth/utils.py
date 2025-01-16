@@ -6,10 +6,7 @@ import bcrypt
 from enum import StrEnum
 import uuid
 
-from pydantic import EmailStr
-
 from src.auth.models import UserModel
-from src.database import session_factory
 from src.settings import settings
 
 TOKEN_TYPE_FIELD = "type"
@@ -73,7 +70,7 @@ def create_jwt(
 ) -> str:
     jwt_payload = {TOKEN_TYPE_FIELD: token_type}
     jwt_payload.update(token_data)
-    return encode_jwt(payload=jwt_payload, expire_timedelta=expire_timedelta, )
+    return encode_jwt(payload=jwt_payload, expire_timedelta=expire_timedelta)
 
 
 def create_access_token(user: UserModel) -> str:
@@ -96,4 +93,3 @@ def create_refresh_token(user: UserModel) -> str:
         token_data=jwt_payload,
         expire_timedelta=settings.auth.REFRESH_TOKEN_EXPIRE_DAYS
     )
-

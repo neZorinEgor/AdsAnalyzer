@@ -1,7 +1,6 @@
 from datetime import timedelta
 from pathlib import Path
 
-from lightgbm import LGBMRegressor
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).parent
@@ -16,23 +15,13 @@ class _Auth:
     BAN_MESSAGE: str = "BANNED"
 
 
-class _MachineLearning:
-    base_regression_algorithm: LGBMRegressor = LGBMRegressor
-
-
 class Settings(BaseSettings):
     auth: _Auth = _Auth()
-    ml: _MachineLearning = _MachineLearning()
 
     APP_HOST: str
     APP_PORT: str
     INITIAL_ADMIN_EMAIL: str
     INITIAL_ADMIN_PASSWORD: str
-
-    SMTP_EMAIL_FROM: str
-    SMTP_HOST: str
-    SMTP_PORT: str
-    SMTP_PASSWORD: str
 
     REDIS_HOST: str
     REDIS_PORT: str
