@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # Event manager
 @asynccontextmanager
 async def lifespan(application: FastAPI):
+    # Create S3 Bucket
     await s3_client.create_bucket(bucket_name=settings.S3_BUCKETS)
     await AuthService(AuthRepository).init_admin(
         email=settings.INITIAL_ADMIN_EMAIL,
@@ -28,8 +29,8 @@ async def lifespan(application: FastAPI):
 
 
 app = FastAPI(
-    title="📚 TrainME",
-    description="`No-code` platform for automating the process of building and deploying machine learning models ",
+    title="📰 TrainME",
+    description="`No-code` платформа для продвинутого анализа рекламных кампаний",
     lifespan=lifespan,
     docs_url="/docs",
     version="1.0.0",
@@ -50,7 +51,7 @@ app.add_middleware(
 )
 
 
-@app.get(path="/healthcheck", status_code=status.HTTP_200_OK)
+@app.get(path="/healthcheck", status_code=status.HTTP_200_OK, tags=["Docker"])
 def healthcheck():
     return "ok"
 

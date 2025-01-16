@@ -1,37 +1,43 @@
 from fastapi import status
 from fastapi.exceptions import HTTPException
 
-UserAlreadyExistException = HTTPException(
+user_already_exist_exception = HTTPException(
     status_code=status.HTTP_409_CONFLICT,
     detail="User by this email already exist."
 )
 
-InvalidCredentialsException = HTTPException(
+
+invalid_credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Invalid email or password."
 )
 
-InvalidTokenException = HTTPException(
+
+invalid_token_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Invalid token."
 )
 
-InvalidTokenTypeException = HTTPException(
+
+invalid_token_type_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Invalid token type."
 )
 
-ExpiredTokenException = HTTPException(
+
+expired_token_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Token has expired."
 )
 
-UserIsBlockedException = HTTPException(
+
+user_is_blocked_exception = HTTPException(
     status_code=status.HTTP_403_FORBIDDEN,
     detail="User is banned."
 )
 
-UserIsNotSuperException = HTTPException(
+
+user_is_not_super_exception = HTTPException(
     status_code=status.HTTP_403_FORBIDDEN,
     detail="Permission denied."
 )
