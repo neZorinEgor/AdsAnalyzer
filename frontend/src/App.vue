@@ -1,7 +1,7 @@
 <template>
   <div class="flex">
     <!-- Sidebar -->
-    <aside class="h-screen border-r px-4 mr-4">
+    <aside class="w-1/6 h-screen border-r px-4 mr-4" v-if="!$route.meta.hideNavbar">
       <!-- Logo -->
       <RouterLink class="container py-2 flex items-center space-x-2 border-b border-black mb-2" to="/">
         <img src="" alt="Logo">
@@ -33,7 +33,7 @@
       </nav>
     </aside>
     <!-- Main -->
-    <main>
+    <main class="w-full">
       <RouterView/>
     </main>
   </div>

@@ -6,7 +6,7 @@ from aiobotocore.session import get_session
 
 class S3Client:
     def __init__(
-            self: "S3Client",
+            self,
             access_key: str,
             secret_key: str,
             endpoint_url: str,

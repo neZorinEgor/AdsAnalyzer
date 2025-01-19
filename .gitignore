@@ -5,3 +5,4 @@
 **/jwt-public.pem
 **/.env
 /frontend/node_modules/
+/backend/test.py
