@@ -1,11 +1,9 @@
-version: "3.9"
-
 services:
   s3:
     container_name: s3
     image: localstack/localstack:latest
     ports:
-      - ${EDGE_PORT}:${EDGE_PORT}
+      - ${GATEWAY_LISTEN}:${GATEWAY_LISTEN}
     volumes:
       - localstack-data:/var/lib/localstack
     env_file:
@@ -39,6 +37,22 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+
+#  postgres:
+#    image: postgres:latest
+#    container_name: postgres
+#    env_file:
+#      - .env
+#    ports:
+#      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+#    healthcheck:
+#      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+#      interval: 15s
+#      timeout: 15s
+#      retries: 4
+#    depends_on:
+#      redis:
+#        condition: service_healthy
 
 #  backend:
 #    container_name: backend

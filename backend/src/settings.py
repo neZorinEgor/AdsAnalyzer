@@ -39,9 +39,8 @@ class Settings(BaseSettings):
 
     S3_HOST: str
     S3_BUCKETS: str
-    EDGE_PORT: str
+    GATEWAY_LISTEN: str
     SERVICES: str
-    DEFAULT_REGION: str
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
 
@@ -57,7 +56,7 @@ class Settings(BaseSettings):
 
     @property
     def s3_endpoint_url(self):
-        return f"http://{settings.S3_HOST}:{settings.EDGE_PORT}"
+        return f"http://{settings.S3_HOST}:{settings.GATEWAY_LISTEN}"
 
     model_config = SettingsConfigDict(env_file=".env")
 

@@ -38,7 +38,7 @@ class AuthService:
         # 2. Saving the user
         logger.info(f"Successful save new user {new_user.email}")
         await self.__repository.save_user(new_user)
-        return await self.login(LoginUserSchema(**new_user.__dict))
+        return await self.login(LoginUserSchema(**new_user.__dict__))
 
     async def login(self, login_user: LoginUserSchema) -> JWTTokenInfo:
         """
