@@ -8,17 +8,4 @@
 ![Docker](https://img.shields.io/badge/docker-%2307405e.svg?style=for-the-badge&logo=docker&logoColor=E6882EE)
 ![Sklearn](https://img.shields.io/badge/sklearn-%2307405e.svg?style=for-the-badge&logo=scikit-learn&logoColor=E6882EE)
 
-No-Code платформа для продвинутого анализа рекламных кампаний 
-
-
-### Генерация пары ключей RSA (приватного и публичного ключей)
-
-```shell
-# Сгенерировать приватный ключ RSA размером 2048
-openssl genrsa -out jwt-private.pem 2048
-```
-
-```shell
-# Извлечь публичный ключ из пары ключей, который может быть использован в сертификате
-openssl rsa -in jwt-private.pem -outform PEM -pubout -out jwt-public.pem
-```
+`No-Code` платформа для продвинутого анализа рекламных кампаний 
