@@ -31,7 +31,6 @@ def encode_jwt(
     to_encode.update(
         exp=now + expire_timedelta,
         iat=now,
-        jti=str(uuid.uuid4())
     )
     return jwt.encode(to_encode, key=private_key, algorithm=algorithm)
 
@@ -74,11 +73,11 @@ def create_jwt(
 
 
 def create_access_token(user: UserModel) -> str:
+    print(user.__dict__)
     jwt_payload = {
         "sub": user.id,
         "email": user.email,
-        "is_banned": user.is_banned,
-        "is_superuser": user.is_superuser
+        "role": user.role
     }
     return create_jwt(token_type=TokenType.ACCESS, token_data=jwt_payload)
 

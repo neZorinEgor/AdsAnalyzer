@@ -1,5 +1,7 @@
 from pydantic import BaseModel, EmailStr, constr
 
+from src.auth.models import Role
+
 
 class UserSchema(BaseModel):
     email: EmailStr
@@ -24,6 +26,7 @@ class UserTokenPayloadSchema(BaseModel):
     exp: int | float
     sub: int
     email: EmailStr | None = None
+    role: Role
 
 
 class JWTTokenInfo(BaseModel):

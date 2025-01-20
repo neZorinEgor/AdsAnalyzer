@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import EmailStr
 
 from src.auth.core import IAuthRepository
-from src.auth.models import UserModel
+from src.auth.models import UserModel, Role
 from src.auth.schemas import RegisterUserSchema
 from src.database import session_factory
 from sqlalchemy import select, delete, update
@@ -28,7 +28,7 @@ class AuthRepository(IAuthRepository):
                 password=hash_password(user.password),
                 register_at=datetime.datetime.now(datetime.UTC),
                 is_banned=False,
-                is_superuser=False,
+                role=Role.USER
             )
             session.add(user)
             await session.commit()
@@ -51,7 +51,7 @@ class AuthRepository(IAuthRepository):
     @staticmethod
     async def init_admin(email: EmailStr, password: str):
         async with session_factory() as session:
-            admin = UserModel(email=email, password=hash_password(password), is_superuser=True)
+            admin = UserModel(email=email, password=hash_password(password), role=Role.ADMIN)
             admin_exist_query = select(UserModel).where(UserModel.email == email)
             admin_exist_query = await session.execute(admin_exist_query)
             admin_exist = admin_exist_query.scalar_one_or_none()

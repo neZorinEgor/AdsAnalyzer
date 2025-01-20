@@ -5,6 +5,7 @@ from celery import Celery
 from pydantic import EmailStr
 
 from src.auth.core import IAuthRepository
+from src.auth.models import Role
 from src.auth.schemas import RegisterUserSchema, LoginUserSchema, JWTTokenInfo, UserTokenPayloadSchema
 from src.auth import utils as jwt_utils
 from src.auth.exceptions import (
@@ -74,7 +75,7 @@ class AuthService:
 
     async def ban_user_by_email(self, email_for_ban: EmailStr, producer: UserTokenPayloadSchema):
         producer = await self.__repository.find_user_by_email(producer.email)
-        if not producer.is_superuser:
+        if not producer.role == Role.ADMIN:
             raise user_is_not_super_exception
         # await self.__repository.ban_user_by_email(email_for_ban)
         await self.__repository.update_user_by_email(email_for_ban, is_banned=True)
@@ -86,7 +87,7 @@ class AuthService:
 
     async def unban_user_by_email(self, email_for_unban: EmailStr, producer: UserTokenPayloadSchema):
         producer = await self.__repository.find_user_by_email(producer.email)
-        if not producer.is_superuser:
+        if not producer.role == Role.ADMIN:
             raise user_is_not_super_exception
         # await self.__repository.unban_user_by_email(email_for_unban)
         await self.__repository.update_user_by_email(email_for_unban, is_banned=False)
