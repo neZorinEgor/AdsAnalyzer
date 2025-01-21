@@ -10,7 +10,7 @@ class _Auth:
     PRIVATE_JWT_KEY_PATH: Path = BASE_DIR / "auth" / "certs" / "jwt-private.pem"
     PUBLIC_JWT_KEY_PATH: Path = BASE_DIR / "auth" / "certs" / "jwt-public.pem"
     ALGORITHM: str = "RS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: timedelta = timedelta(minutes=15)
+    ACCESS_TOKEN_EXPIRE_MINUTES: timedelta = timedelta(minutes=240)
     REFRESH_TOKEN_EXPIRE_DAYS: timedelta = timedelta(days=1)
     BAN_MESSAGE: str = "BANNED"
 

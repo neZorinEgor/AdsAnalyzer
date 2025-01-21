@@ -21,7 +21,7 @@ class UserSuccessfulRegisterMessage(BaseModel):
     user_id: int
 
 
-class UserTokenPayloadSchema(BaseModel):
+class UserPayloadSchema(BaseModel):
     iat: int | float
     exp: int | float
     sub: int

@@ -73,7 +73,6 @@ def create_jwt(
 
 
 def create_access_token(user: UserModel) -> str:
-    print(user.__dict__)
     jwt_payload = {
         "sub": user.id,
         "email": user.email,

@@ -1,4 +1,6 @@
 import logging
+from typing import Type
+
 from redis import Redis
 
 from celery import Celery
@@ -6,7 +8,7 @@ from pydantic import EmailStr
 
 from src.auth.core import IAuthRepository
 from src.auth.models import Role
-from src.auth.schemas import RegisterUserSchema, LoginUserSchema, JWTTokenInfo, UserTokenPayloadSchema
+from src.auth.schemas import RegisterUserSchema, LoginUserSchema, JWTTokenInfo, UserPayloadSchema
 from src.auth import utils as jwt_utils
 from src.auth.exceptions import (
     user_already_exist_exception,
@@ -25,7 +27,7 @@ redis = Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 class AuthService:
     def __init__(self, repository):
         # Dependency inversion, so as not to depend on implementation ;)
-        self.__repository: IAuthRepository = repository()
+        self.__repository: Type[IAuthRepository] = repository()
 
     async def register(self, new_user: RegisterUserSchema):
         """
@@ -59,7 +61,7 @@ class AuthService:
         refresh_token = jwt_utils.create_refresh_token(user)
         return JWTTokenInfo(access_token=access_token, refresh_token=refresh_token)
 
-    async def refresh_jwt(self, user_credentials: UserTokenPayloadSchema):
+    async def refresh_jwt(self, user_credentials: UserPayloadSchema):
         """
         Generate access token by refresh from credentials
         """
@@ -73,7 +75,7 @@ class AuthService:
         logger.info(f"User by id: {email} delete account.")
         await self.__repository.delete_user_by_email(email)
 
-    async def ban_user_by_email(self, email_for_ban: EmailStr, producer: UserTokenPayloadSchema):
+    async def ban_user_by_email(self, email_for_ban: EmailStr, producer: UserPayloadSchema):
         producer = await self.__repository.find_user_by_email(producer.email)
         if not producer.role == Role.ADMIN:
             raise user_is_not_super_exception
@@ -85,7 +87,7 @@ class AuthService:
             "detail": f"User {email_for_ban} successful banned"
         }
 
-    async def unban_user_by_email(self, email_for_unban: EmailStr, producer: UserTokenPayloadSchema):
+    async def unban_user_by_email(self, email_for_unban: EmailStr, producer: UserPayloadSchema):
         producer = await self.__repository.find_user_by_email(producer.email)
         if not producer.role == Role.ADMIN:
             raise user_is_not_super_exception
