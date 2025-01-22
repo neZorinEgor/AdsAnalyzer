@@ -7,7 +7,10 @@ import asyncio
 from typing import Type
 from fastapi.responses import StreamingResponse
 
+from src.ads.exceptions import report_not_founded
 from src.ads.repository import ADSInfoRepository
+from src.report.core import ReportType
+from src.report.factory import report_factory
 from src.s3 import s3_client
 from celery import shared_task
 
@@ -28,9 +31,10 @@ class PreprocessingServie:
             self,
             dataset_csv: str,
             filename: str,
-            user_id: int
+            user_id: int,
+            report_type: ReportType
     ):
-        print(await self.__repository.save_asd_info(owner_id=user_id, report_name=filename))
+        await self.__repository.save_asd_info(owner_id=user_id, report_name=filename)
         dataframe = pd.read_csv(StringIO(dataset_csv), header=4, low_memory=False)
         columns_to_drop = [col for col in dataframe.columns if dataframe[col].nunique() <= 1]
         dataframe.drop(columns=columns_to_drop, inplace=True)
@@ -75,36 +79,48 @@ class PreprocessingServie:
         ax6.set_xlabel('Тип устройства')
 
         plt.tight_layout()
-        report_buffer = BytesIO()
-        plt.savefig(report_buffer, format="png")
-        report_buffer.seek(0)
+        report_image_buffer = BytesIO()
+        plt.savefig(report_image_buffer, format="png")
+        report_image_buffer.seek(0)
+
+        report_generator = report_factory.create(report_type=ReportType(report_type))
+        report = report_generator.generate(image=report_image_buffer)
+        report_steem = BytesIO()
+        report.save(report_steem)
+        report_steem.seek(0)
         await s3_client.upload_file(
             bucket=settings.S3_BUCKETS,
-            key=f"{filename}.zip",
+            key=f"{user_id}/{filename}.zip",
             file=zip_files(
                 [
-                    (report_buffer, f"{filename}.png")
+                    (report_steem, f"{filename}.docx")
                 ]
             )
         )
 
     async def download_ads_report(self, owner_id: int, report_id: int):
         ads_info = await self.__repository.get_asd_info_by_id(owner_id=owner_id, ads_info_id=report_id)
+        if not ads_info:
+            raise report_not_founded
         report = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=...)
         return StreamingResponse(
-            content=...,
+            content=BytesIO(report),
+            media_type="application/zip",
             headers={
-
+                "Access-control-Expose-Headers": "Content-Disposition",
+                "Content-Disposition": f"attachment; filename={ads_info.report_name}.zip"
             }
         )
+
 
 @shared_task
 def distributed_preprocessing_dataset(
         dataset_csv: str,
         filename: str,
-        user_id: int
+        user_id: int,
+        report_type: ReportType
 ):
     service = PreprocessingServie(repository=ADSInfoRepository)
     asyncio.run(
-        service.preprocessing_dataset(dataset_csv, filename, user_id)
+        service.preprocessing_dataset(dataset_csv, filename, user_id, report_type)
     )

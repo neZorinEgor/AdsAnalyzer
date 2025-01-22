@@ -6,20 +6,22 @@ from src.ads.dependency import preprocessing_service
 from src.ads.service import PreprocessingServie, distributed_preprocessing_dataset
 from src.auth.dependency import current_user
 from src.auth.schemas import UserPayloadSchema
+from src.report.core import ReportType
 
 router = APIRouter(prefix="/ads/yd", tags=["ADS"])
 
 
 @router.post(path="/preprocessing")
 async def preprocessing_dataset(
+        report_type: ReportType,
         user: UserPayloadSchema = Depends(current_user),
         company_dataset: UploadFile = File(...),
-
 ):
     distributed_preprocessing_dataset.delay(
         dataset_csv=pd.read_csv(company_dataset.file, low_memory=False).to_csv(),
         filename=company_dataset.filename.split(".")[0],
-        user_id=user.sub
+        user_id=user.sub,
+        report_type=ReportType(report_type)
     )
     return "Task in queue."
 

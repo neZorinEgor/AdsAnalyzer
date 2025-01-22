@@ -17,7 +17,7 @@ class IADSInfoRepository(ABC):
 
     @staticmethod
     @abstractmethod
-    async def get_asd_info_by_id(owner_id: int, ads_info_id: int) -> Optional[List[ADSInfoSchema]]:
+    async def get_asd_info_by_id(owner_id: int, ads_info_id: int) -> Optional[ADSInfoSchema]:
         raise NotImplementedError()
 
     @staticmethod
