@@ -5,3 +5,9 @@
 **/jwt-public.pem
 **/.env
 /frontend/node_modules/
+/analys/.venv/
+/analys/data/data_01.csv
+/analys/data/data_02.csv
+/analys/data/data_03.csv
+/analys/data/data_04.csv
+/analys/data/direct.csv
