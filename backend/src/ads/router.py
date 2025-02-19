@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/analysis", tags=["ADS"])
+router = APIRouter(prefix="/ads", tags=["ADS"])
 
 
 @router.post("/upload")

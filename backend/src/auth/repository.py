@@ -25,8 +25,8 @@ class AuthRepository(IAuthRepository):
         async with session_factory() as session:
             user = UserModel(
                 email=user.email,
-                password=hash_password(user.password),
-                register_at=datetime.datetime.now(datetime.UTC),
+                password=hash_password(user.password).decode(),
+                register_at=datetime.datetime.today(),
                 is_banned=False,
                 role=Role.USER
             )
@@ -51,7 +51,7 @@ class AuthRepository(IAuthRepository):
     @staticmethod
     async def init_admin(email: EmailStr, password: str):
         async with session_factory() as session:
-            admin = UserModel(email=email, password=hash_password(password), role=Role.ADMIN)
+            admin = UserModel(email=email, password=hash_password(password).decode(), role=Role.ADMIN)
             admin_exist_query = select(UserModel).where(UserModel.email == email)
             admin_exist_query = await session.execute(admin_exist_query)
             admin_exist = admin_exist_query.scalar_one_or_none()

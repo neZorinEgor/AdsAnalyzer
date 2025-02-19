@@ -6,7 +6,7 @@ from typing import Annotated
 
 
 engine = create_async_engine(
-    url=settings.mysql_async_url,
+    url=settings.postgresql_utl,
     echo=False,
 )
 

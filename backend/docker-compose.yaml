@@ -22,13 +22,13 @@ services:
       timeout: 5s
       retries: 3
 
-  mysql:
-    image: mysql:9.1.0
-    container_name: mysql
+  postgres:
+    image: postgres:latest
+    container_name: postgres
     env_file:
       - .env
     ports:
-      - ${MYSQL_PORT}:${MYSQL_PORT}
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 15s
@@ -37,22 +37,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-
-#  postgres:
-#    image: postgres:latest
-#    container_name: postgres
-#    env_file:
-#      - .env
-#    ports:
-#      - ${POSTGRES_PORT}:${POSTGRES_PORT}
-#    healthcheck:
-#      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-#      interval: 15s
-#      timeout: 15s
-#      retries: 4
-#    depends_on:
-#      redis:
-#        condition: service_healthy
 
 #  backend:
 #    container_name: backend
@@ -82,39 +66,6 @@ services:
 #      interval: 10s
 #      timeout: 10s
 #      retries: 3
-
-#  flower:
-#    image: mher/flower:2.0
-#    container_name: flower
-#    command: celery -A celery flower --basic-auth=${FLOWER_USERNAME}:${FLOWER_PASSWORD} --worker -celery_worker
-#    volumes:
-#      - /src/auth/service
-#    restart: always
-#    ports:
-#      - ${FLOWER_PORT}:${FLOWER_PORT}
-#    environment:
-#      CELERY_BROKER_URL: redis://${REDIS_HOST}:${REDIS_PORT}
-#      CELERY_RESULT_BACKEND: redis://${REDIS_HOST}:${REDIS_PORT}
-#    healthcheck:
-#      test: [ "CMD", "celery", "-A", "celery", "status" ]
-#      interval: 10s
-#      timeout: 10s
-#      retries: 3
-#    depends_on:
-#      celery_worker:
-#        condition: service_healthy
-#
-#  nginx:
-#    image: nginx:latest
-#    container_name: nginx
-#    restart: always
-#    depends_on:
-#      trainme:
-#        condition: service_healthy
-#    ports:
-#      - ${NGINX_HTTP_PORT}:${NGINX_HTTP_PORT}
-#    volumes:
-#      - ./nginx/conf.d:/etc/nginx/conf.d
 
 volumes:
   localstack-data:

@@ -4,7 +4,6 @@ import datetime
 import jwt
 import bcrypt
 from enum import StrEnum
-import uuid
 
 from src.auth.models import UserModel
 from src.settings import settings
@@ -84,7 +83,8 @@ def create_access_token(user: UserModel) -> str:
 def create_refresh_token(user: UserModel) -> str:
     jwt_payload = {
         "sub": user.id,
-        "email": user.email
+        "email": user.email,
+        "role": user.role
     }
     return create_jwt(
         token_type=TokenType.REFRESH,

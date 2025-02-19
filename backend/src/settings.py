@@ -26,12 +26,11 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: str
 
-    MYSQL_HOST: str
-    MYSQL_PORT: str
-    MYSQL_USER: str
-    MYSQL_DATABASE: str
-    MYSQL_PASSWORD: str
-    MYSQL_ROOT_PASSWORD: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
 
     FLOWER_USERNAME: str
     FLOWER_PASSWORD: str
@@ -47,8 +46,8 @@ class Settings(BaseSettings):
     NGINX_HTTP_PORT: str
 
     @property
-    def mysql_async_url(self):
-        return f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
+    def postgresql_utl(self) -> str:
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     @property   # for black list and cache
     def redis_url(self):
