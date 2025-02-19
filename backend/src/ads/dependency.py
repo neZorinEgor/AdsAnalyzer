@@ -1,6 +1,6 @@
 from src.ads.repository import ADSInfoRepository
-from src.ads.service import PreprocessingServie
+from src.ads.service import AnalysisServie
 
 
-def preprocessing_service():
-    return PreprocessingServie(repository=ADSInfoRepository)
+def analysis_service():
+    return AnalysisServie(repository=ADSInfoRepository)

@@ -9,6 +9,6 @@
 ![S3](https://img.shields.io/badge/s3-%2307405e.svg?style=for-the-badge&logo=amazonS3&logoColor=E6882EE)
 ![Docker](https://img.shields.io/badge/docker-%2307405e.svg?style=for-the-badge&logo=docker&logoColor=E6882EE)
 
-`No-Code` платформа для продвинутого анализа рекламных кампаний 
+`No-Code` платформа для анализа эффективности рекламных кампаний 
 
 > in progress
