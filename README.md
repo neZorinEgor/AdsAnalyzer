@@ -1,7 +1,7 @@
 # TrainMe 📰
 
 ![Sklearn](https://img.shields.io/badge/sklearn-%2307405e.svg?style=for-the-badge&logo=scikit-learn&logoColor=E6882EE)
-![Pandas](https://img.shields.io/badge/pandas-%2307405e.svg?style=for-the-badge&logo=pandas&logoColor=000000)
+![Pandas](https://img.shields.io/badge/pandas-%2307405e.svg?style=for-the-badge&logo=pandas&logoColor=E6882EE)
 ![FastAPI](https://img.shields.io/badge/fastapi-%2307405e.svg?style=for-the-badge&logo=fastapi&logoColor=E6882EE)
 ![Redis](https://img.shields.io/badge/redis-%2307405e.svg?style=for-the-badge&logo=redis&logoColor=E6882EE)
 ![Celery](https://img.shields.io/badge/celery-%2307405e.svg?style=for-the-badge&logo=celery&logoColor=A9CC54)
