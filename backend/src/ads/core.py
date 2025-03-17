@@ -7,7 +7,12 @@ from src.ads.schemas import ADSInfoSchema
 class IADSInfoRepository(ABC):
     @staticmethod
     @abstractmethod
-    async def save_asd_info(owner_id: int, **kwargs) -> int:
+    async def save_asd_info(
+            is_ready: bool,
+            optimal_clusters: int,
+            bad_company_segment: str,
+            cluster_image_link: str
+    ) -> int:
         raise NotImplementedError()
 
     @staticmethod

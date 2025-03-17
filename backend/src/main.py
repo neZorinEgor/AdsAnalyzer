@@ -10,7 +10,7 @@ from src.auth.router import router as auth_router
 from src.ads.router import router as ads_router
 from src.auth.service import AuthService
 from src.settings import settings
-from src.s3 import s3_client
+from src.filestorage import s3_client
 
 # Logging configurations
 logging.basicConfig(level=logging.INFO)
