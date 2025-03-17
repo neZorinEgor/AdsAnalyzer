@@ -1,6 +1,7 @@
 import pandas as pd
 import requests
 import streamlit as st
+import plotly.express as px
 
 st.set_page_config(
     page_title="Analyzer",
@@ -27,12 +28,13 @@ def upload_file_into_server():
             if response.status_code == 200:
                 st.success("File uploaded successfully!", icon="✅")
                 response_data = response.json()
-                # st.json(response_data)
-                # cluster_img = response_data["cluster_image_ling"]
                 num_clusters = response_data["optimal_cluster"]
                 bad_segments = response_data["bad_company_segments"]
                 scatter_data = pd.read_json(response_data["scatter_data"])
+
+                # Преобразуем cluster_id в строку для корректного отображения в plotly
                 scatter_data["cluster_id"] = scatter_data["cluster_id"].astype(str)
+
                 st.write("# Отчёт по эффективности рекламной кампании")
                 st.write(f"Модуль анализа определил **{num_clusters} кластеров** рекламных объявлений, объединенных по схожим характеристикам.")
                 st.write("### Неэффективные сегменты")
@@ -40,8 +42,19 @@ def upload_file_into_server():
                 bad_segments_formatted = "\n".join([f"* {segment}" for segment in bad_segments])
                 st.write(bad_segments_formatted)
                 st.write("### Визуализация кластеров")
-                # st.image(cluster_img)
-                st.scatter_chart(data=scatter_data, x="0", y="1", color="cluster_id", x_label="Первая главная компонента", y_label="Вторая главная компонента")
+                fig = px.scatter(
+                    scatter_data,
+                    x="x",
+                    y="y",
+                    color="cluster_id",  # Цвет точек по кластерам
+                    hover_data=scatter_data.columns,  # Все данные для отображения при наведении
+                    title="Визуализация кластеров",
+                    labels={"x": "Первая главная компонента", "y": "Вторая главная компонента"},
+                    size_max=0.4,
+                    opacity=0.7,
+                )
+                st.plotly_chart(fig)
+                st.dataframe(scatter_data[scatter_data["cluster_id"] == "2"].describe())
                 st.write("**Рекомендации:** Пересмотрите стратегию показа рекламы для выявленных неэффективных сегментов, чтобы оптимизировать бюджет и повысить общую эффективность кампании.")
             else:
                 st.error(f"Failed to upload file. Status code: {response.status_code}", icon="❌")
@@ -53,5 +66,3 @@ st.write("# ⚙️ AutoML")
 st.write("Upload your company stat from yandex and get analysis!")
 upload_file = st.file_uploader("Upload company statistic")
 st.button("Upload", on_click=upload_file_into_server)
-
-
