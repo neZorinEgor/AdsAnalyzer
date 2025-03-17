@@ -30,12 +30,13 @@ class AnalysisServie:
     __percentage_error_diff = {}        # Процентные изменения WCSS
     __optimality_threshold: int = 20    # Порог для определения оптимального количества кластеров
     __optimal_num_cluster: int = 3      # Оптимальное количество кластеров
-    __bad_company_segments: int         # Сегменты аудитории, для которой лучше всего отключить рекламу
+    __bad_company_segments: str         # Сегменты аудитории, для которой лучше всего отключить рекламу
     __efficiency_columns: list = ["Показы", "Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)",
                                   "Ср. цена клика (руб.)", "Ср. ставка за клик (руб.)", "Отказы (%)", "Глубина (стр.)",
                                   "Прибыль (руб.)", ]
     __cluster_img_link: str
-    __wcss_img: np.ndarray
+    __wcss_img_img_link: str
+    __scatter_data: pd.DataFrame
 
     def __init__(
             self,
@@ -77,11 +78,16 @@ class AnalysisServie:
             plt.axvline(x=i + 1, color="darkgray", linestyle="--", ymax=int(wcss_values[i] * 100 / max_val) / 100)
         plt.axvline(self.__optimal_num_cluster, color="indianred", label="Оптимальный кластер", linestyle="--")
         plt.legend()
-        fig = plt.gcf()
-        fig.canvas.draw()
-        self.__wcss_img = np.array(plt.gcf().canvas.renderer.buffer_rgba())
-        plt.close()
-
+        wcss_buf = io.BytesIO()
+        plt.savefig(wcss_buf, format='jpg')
+        wcss_buf.seek(0)
+        wcss_plot_bytes = wcss_buf.getvalue()
+        # Save cluster image in S3
+        key=f"{datetime.datetime.now(datetime.UTC).timestamp()}_wcss.jpg"
+        await s3_client.upload_file(
+            bucket=settings.S3_BUCKETS,
+            key=key,
+            file=wcss_plot_bytes)
         for item in range(len(self.__percentage_error_diff) - 1):
             proc_diff = list(self.__percentage_error_diff.items())[item][1] - \
                         list(self.__percentage_error_diff.items())[item + 1][1]
@@ -96,9 +102,12 @@ class AnalysisServie:
         pca_df = pd.DataFrame(pca_df)
         kmeans = KMeans(n_clusters=self.__optimal_num_cluster, max_iter=1000, init="k-means++", random_state=42)
         predict = kmeans.fit_predict(pca_df)
+        pca_df["cluster_id"] = predict
         self.__efficiency_columns.append("cluster_id")
         self.__company["cluster_id"] = predict
-        # Визуализация кластров
+        pca_df["cluster_id"] = pca_df["cluster_id"].apply(lambda x: x + 1)
+        self.__scatter_data = pca_df
+        # Визуализация кластеров
         centroids = kmeans.cluster_centers_
         plt.figure(figsize=(10, 6))
         for i in np.unique(predict):
@@ -109,30 +118,44 @@ class AnalysisServie:
         plt.ylabel('Вторая главная компонента')
         plt.title('Визуализация кластеров с центроидами')
         plt.tight_layout()
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
-        plot_bytes = buf.getvalue()
+        wcss_buf = io.BytesIO()
+        plt.savefig(wcss_buf, format='jpg')
+        wcss_buf.seek(0)
+        cluster_plot_bytes = wcss_buf.getvalue()
         # Save cluster image in S3
-        key=f"{datetime.datetime.now(datetime.UTC).timestamp()}_clusters.jpg"
+        key = f"{datetime.datetime.now(datetime.UTC).timestamp()}_clusters.jpg"
         await s3_client.upload_file(
             bucket=settings.S3_BUCKETS,
             key=key,
-            file=plot_bytes
+            file=cluster_plot_bytes
         )
         self.__cluster_img_link = f"{settings.s3_endpoint_url}/{settings.S3_BUCKETS}/{key}"
-        await self.__repository.save_asd_info(is_ready=True, optimal_clusters=self.__optimal_num_cluster, bad_company_segment="foobar")
-        buf.close()
+        await self.__repository.save_asd_info(
+            is_ready=True,
+            optimal_clusters=self.__optimal_num_cluster,
+            bad_company_segment="foobar",
+            cluster_image_link=self.__cluster_img_link
+        )
+        wcss_buf.close()
 
-    def __analyze_each_cluster(self):
-        for i in range(self.__optimal_num_cluster):
-            pass
+    async def __define_bad_segments(self, rejection_threshold: int = 100):
+        rejection_result = []
+        group = self.__company.query("cluster_id==2").groupby(["Пол", "Возраст"])[
+            ["CTR (%)", "Ср. цена клика (руб.)", "Отказы (%)", "Глубина (стр.)", "Расход (руб.)", 'Взвешенные показы',
+             'Клики', ]
+        ].quantile(.5)
+        for i, b in group[group["Отказы (%)"] >= rejection_threshold].index:
+            if i != "не определен" or b != "не определен":
+                rejection_result.append(f"{i}: {b}")
+        self.__bad_company_segments = rejection_result if rejection_result else "не выявленно"
 
     async def analysis(self):
         await self.__clustering_ads()
-        self.__analyze_each_cluster()
+        await self.__define_bad_segments()
+        # self.__analyze_each_cluster()
         return {
             "optimal_cluster": self.__optimal_num_cluster,
             "cluster_image_ling": self.__cluster_img_link,
-            "bad_company_segments": self.__bad_company_segments
+            "bad_company_segments": self.__bad_company_segments,
+            "scatter_data": self.__scatter_data.to_json()
         }

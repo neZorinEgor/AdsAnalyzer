@@ -16,7 +16,7 @@ class ADSInfoRepository(IADSInfoRepository):
                 uploaded_at=datetime.datetime.today(),
                 is_ready=False,
                 optimal_clusters=optimal_clusters,
-                bad_company_segment=bad_company_segment,
+                bad_company_segments=bad_company_segment,
                 cluster_image_link=cluster_image_link,
             )
             session.add(save_ads_info_statement)

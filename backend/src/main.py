@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, status
+from fastapi.responses import FileResponse
 from celery import Celery
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -63,6 +64,10 @@ app.add_middleware(
 def healthcheck():
     return "ok"
 
+
+# async def image_from_s3(url: str):
+#     file = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=url)
+#     return FileResponse()
 
 # Application routers
 app.include_router(auth_router)
