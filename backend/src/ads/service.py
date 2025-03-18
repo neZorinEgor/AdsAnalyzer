@@ -25,12 +25,12 @@ sns.set_theme()
 matplotlib.use("agg")
 
 
-class AnalysisServie:
+class AutoAnaalyzerService:
     __wcss_errors: dict = {}            # Сумма внутри-кластерных расстояний
     __percentage_error_diff = {}        # Процентные изменения WCSS
     __optimality_threshold: int = 20    # Порог для определения оптимального количества кластеров
     __optimal_num_cluster: int = 3      # Оптимальное количество кластеров
-    __bad_company_segments: str         # Сегменты аудитории, для которой лучше всего отключить рекламу
+    __bad_company_segments: str         # Сегменты аудитории, для которой лучше отключить рекламу
     __efficiency_columns: list = ["Показы", "Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)",
                                   "Ср. цена клика (руб.)", "Ср. ставка за клик (руб.)", "Отказы (%)", "Глубина (стр.)",
                                   "Прибыль (руб.)", ]
@@ -89,8 +89,7 @@ class AnalysisServie:
             key=key,
             file=wcss_plot_bytes)
         for item in range(len(self.__percentage_error_diff) - 1):
-            proc_diff = list(self.__percentage_error_diff.items())[item][1] - \
-                        list(self.__percentage_error_diff.items())[item + 1][1]
+            proc_diff = list(self.__percentage_error_diff.items())[item][1] - list(self.__percentage_error_diff.items())[item + 1][1]
             if proc_diff > self.__optimality_threshold:
                 self.__optimal_num_cluster = int(list(self.__percentage_error_diff.items())[item][0][-1])
                 break
@@ -106,6 +105,9 @@ class AnalysisServie:
         self.__efficiency_columns.append("cluster_id")
         self.__company["cluster_id"] = predict
         pca_df["cluster_id"] = pca_df["cluster_id"].apply(lambda x: x + 1)
+        pca_df.columns = ["x", "y", "cluster_id"]
+        # print([i for i in self.__company.columns if i in ["Показы", "Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)", "Ср. цена клика (руб.)", "Ср. ставка за клик (руб.)", "Отказы (%)", "Глубина (стр.)", "Прибыль (руб.)"]])
+        pca_df[["Пол", "Возраст", 'Показы', 'Взвешенные показы', 'Клики', 'CTR (%)', 'wCTR (%)', 'Расход (руб.)', 'Ср. цена клика (руб.)', 'Ср. ставка за клик (руб.)', 'Отказы (%)', 'Глубина (стр.)', 'Прибыль (руб.)']] = self.__company[["Пол", "Возраст", 'Показы', 'Взвешенные показы', 'Клики', 'CTR (%)', 'wCTR (%)', 'Расход (руб.)', 'Ср. цена клика (руб.)', 'Ср. ставка за клик (руб.)', 'Отказы (%)', 'Глубина (стр.)', 'Прибыль (руб.)']]
         self.__scatter_data = pca_df
         # Визуализация кластеров
         centroids = kmeans.cluster_centers_
@@ -118,15 +120,15 @@ class AnalysisServie:
         plt.ylabel('Вторая главная компонента')
         plt.title('Визуализация кластеров с центроидами')
         plt.tight_layout()
-        wcss_buf = io.BytesIO()
+        cluster_buf = io.BytesIO()
         plt.savefig(wcss_buf, format='jpg')
-        wcss_buf.seek(0)
+        cluster_buf.seek(0)
         cluster_plot_bytes = wcss_buf.getvalue()
         # Save cluster image in S3
-        key = f"{datetime.datetime.now(datetime.UTC).timestamp()}_clusters.jpg"
+        cluster_key = f"{datetime.datetime.now(datetime.UTC).timestamp()}_clusters.jpg"
         await s3_client.upload_file(
             bucket=settings.S3_BUCKETS,
-            key=key,
+            key=cluster_key,
             file=cluster_plot_bytes
         )
         self.__cluster_img_link = f"{settings.s3_endpoint_url}/{settings.S3_BUCKETS}/{key}"

@@ -1,6 +1,6 @@
 from src.ads.repository import ADSInfoRepository
-from src.ads.service import AnalysisServie
+from src.ads.service import AutoAnaalyzerService
 
 
 def analysis_service():
-    return AnalysisServie(repository=ADSInfoRepository)
+    return AutoAnaalyzerService(repository=ADSInfoRepository)

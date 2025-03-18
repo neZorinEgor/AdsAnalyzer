@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 import streamlit as st
 import plotly.express as px
+import plotly.figure_factory as ff
 
 st.set_page_config(
     page_title="Analyzer",
@@ -37,10 +38,6 @@ def upload_file_into_server():
 
                 st.write("# Отчёт по эффективности рекламной кампании")
                 st.write(f"Модуль анализа определил **{num_clusters} кластеров** рекламных объявлений, объединенных по схожим характеристикам.")
-                st.write("### Неэффективные сегменты")
-                st.write("В ходе анализа были выявлены сегменты, которые демонстрируют низкую эффективность. Рекомендуется отключить показ рекламы для следующих сегментов:")
-                bad_segments_formatted = "\n".join([f"* {segment}" for segment in bad_segments])
-                st.write(bad_segments_formatted)
                 st.write("### Визуализация кластеров")
                 fig = px.scatter(
                     scatter_data,
@@ -48,14 +45,33 @@ def upload_file_into_server():
                     y="y",
                     color="cluster_id",  # Цвет точек по кластерам
                     hover_data=scatter_data.columns,  # Все данные для отображения при наведении
-                    title="Визуализация кластеров",
                     labels={"x": "Первая главная компонента", "y": "Вторая главная компонента"},
                     size_max=0.4,
                     opacity=0.7,
                 )
                 st.plotly_chart(fig)
-                st.dataframe(scatter_data[scatter_data["cluster_id"] == "2"].describe())
+                # Распределение кластеров
+                st.text("Распределение кластеров:")
+                st.dataframe(scatter_data["cluster_id"].value_counts())
+                st.write("Первичная статистика эффективного кластера **#3**:")
+                st.dataframe(scatter_data.query("cluster_id=='3'").describe())
+                st.divider()
+                # Неэффективные сигменты
+                st.write("### Неэффективные сегменты")
+                st.write("В ходе анализа были выявлены сегменты, которые демонстрируют низкую эффективность. Рекомендуется отключить показ рекламы для следующих сегментов:")
+                bad_segments_formatted = "\n".join([f"* {segment}" for segment in bad_segments])
+                st.write(bad_segments_formatted)
                 st.write("**Рекомендации:** Пересмотрите стратегию показа рекламы для выявленных неэффективных сегментов, чтобы оптимизировать бюджет и повысить общую эффективность кампании.")
+                group = scatter_data.query("cluster_id=='3'").groupby(["Пол", "Возраст"])[
+                    ["CTR (%)", "Ср. цена клика (руб.)", "Отказы (%)", "Глубина (стр.)", "Расход (руб.)",
+                     'Взвешенные показы', 'Клики']
+                ].quantile(0.5)
+
+                # Сброс индекса для удобства отображения
+                group = group.reset_index()
+
+                # Вывод результата
+                st.dataframe(group)
             else:
                 st.error(f"Failed to upload file. Status code: {response.status_code}", icon="❌")
         except Exception as e:
