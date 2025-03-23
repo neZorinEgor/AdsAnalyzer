@@ -19,10 +19,6 @@ class S3Client(IFileStorage):
         async with self.__session.create_client("s3", **self.__config) as client:
             yield client
 
-    async def create_bucket(self, bucket_name: str):
-        async with self.__get_client() as client:
-            await client.create_bucket(Bucket=bucket_name)
-
     async def upload_file(self, bucket: str, key: str, file: bytes):
         async with self.__get_client() as client:
             return await client.put_object(Bucket=bucket, Key=key, Body=file)
