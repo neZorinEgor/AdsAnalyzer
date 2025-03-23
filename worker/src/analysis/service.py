@@ -5,6 +5,7 @@ from warnings import filterwarnings
 
 import shap
 import requests
+import matplotlib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -21,6 +22,7 @@ from src.analysis.core import IAnalysisRepository, IFileStorage
 from src.analysis.schemas import Message
 from src.config import settings
 
+matplotlib.use("agg")
 filterwarnings("ignore")
 
 
@@ -44,7 +46,7 @@ class AnalysisService:
 
     def __preprocessing_company_dataframe(self, company_df: pd.DataFrame) -> pd.DataFrame:
         company_df.replace({',': '.'}, regex=True, inplace=True)
-        company_df.replace({'-': -1}, regex=False, inplace=True)
+        company_df.replace({'--': -1}, regex=False, inplace=True)
         ignored_cols = ["№ Группы"]
         for col in company_df.columns:
             try:
@@ -173,14 +175,15 @@ class AnalysisService:
             return None
 
     def __cluster_advertising_company(self, company_df: pd.DataFrame):
+        print("start clustering")
         if "cluster_id" in self.__efficiency_columns:
             self.__efficiency_columns.remove("cluster_id")
 
         X = pd.get_dummies(company_df[self.__efficiency_columns])
-        times = {}  # Словарь для хранения времени выполнения
+        times = {}
 
         for i in range(1, 11):
-            kmeans = KMeans(n_clusters=i, max_iter=1000, init="k-means++", random_state=42)
+            kmeans = KMeans(n_clusters=i, max_iter=100, init="k-means++", random_state=42)
             start_time = time.time()
             self.__wcss[i] = kmeans.fit(X).inertia_
             times[i] = time.time() - start_time
@@ -213,12 +216,12 @@ class AnalysisService:
                 self.__optimal_num_cluster=3
         # Постройка кластеров
         pca = PCA(n_components=2)
-        pca_df = pca.fit_transform(self.scaler.fit_transform(self.__company[self.__efficiency_columns]))
+        pca_df = pca.fit_transform(StandardScaler().fit_transform(company_df[self.__efficiency_columns]))
         pca_df = pd.DataFrame(pca_df)
         kmeans = KMeans(n_clusters=self.__optimal_num_cluster, max_iter=1000, init="k-means++", random_state=42)
         predict = kmeans.fit_predict(pca_df)
         self.__efficiency_columns.append("cluster_id")
-        self.__company["cluster_id"]=predict
+        company_df["cluster_id"]=predict
         # Визуализация кластров
         centroids = kmeans.cluster_centers_
         plt.figure(figsize=(10, 6))
@@ -234,7 +237,37 @@ class AnalysisService:
         fig.canvas.draw()
         self.__cluster_img = np.array(plt.gcf().canvas.renderer.buffer_rgba())
         plt.close()
-        return company_df[self.__efficiency_columns].copy(),
+        return company_df[self.__efficiency_columns].copy()
+
+    def __interpret_clusters(self, clustered_df: pd.DataFrame) -> None:
+        print("Light gradient boost start kill my intel...")
+        sampler = RandomUnderSampler()
+        X_resample, y_resample = sampler.fit_resample(
+            X=pd.get_dummies(clustered_df[self.__efficiency_columns]),
+            y=clustered_df["cluster_id"],
+        )
+        X_train, X_test, y_train, y_test = train_test_split(X_resample, y_resample)
+        grid = GridSearchCV(
+            estimator=LGBMClassifier(random_state=42),
+            param_grid={
+                "random_state": [42],
+                "verbose": [-1],
+                "n_jobs": [3],
+                "n_estimators": range(100, 501, 100),
+                "max_depth": range(1, 6, 1),
+                "min_samples_split": range(10, 51, 10),
+                "min_samples_leaf": range(10, 51, 10),
+            },
+            cv=5,
+            n_jobs=-1,
+        )
+        grid.fit(X_train, y_train)
+        estimator = LGBMClassifier(**grid.best_params_)
+        estimator.fit(X_train, y_train)
+        y_pred = estimator.predict(X_test)
+        print(classification_report(y_pred=y_pred, y_true=y_test))
+        explainer = shap.TreeExplainer(estimator)
+        shap_values = explainer.shap_values(X_test)
 
     async def kill_cpu_and_gpu_by_ml(self, message: Message) -> None:
         """
@@ -253,7 +286,6 @@ class AnalysisService:
             await self.__repository.update_company_report_info(report_id=message.report_id, info="Error: report cannot be generated online.")
             print("ошибка")
             return
-        company_df = self.__preprocessing_company_dataframe(company_df)
-        company_df = self.__cluster_advertising_company(company_df)
-        print(company_df.head())
-
+        company_df = self.__preprocessing_company_dataframe(company_df=company_df)
+        company_df = self.__cluster_advertising_company(company_df=company_df)
+        self.__interpret_clusters(clustered_df=company_df)   # by-by, cpu
