@@ -183,7 +183,7 @@ class AnalysisService:
         times = {}
 
         for i in range(1, 11):
-            kmeans = KMeans(n_clusters=i, max_iter=100, init="k-means++", random_state=42)
+            kmeans = KMeans(n_clusters=i, max_iter=300, init="k-means++", random_state=42)
             start_time = time.time()
             self.__wcss[i] = kmeans.fit(X).inertia_
             times[i] = time.time() - start_time
@@ -273,18 +273,20 @@ class AnalysisService:
         """
         Automatically analysis ads-company.
 
-        :param message: message from kafka with user token and uuid
+        :param message: message from kafka with payload
         :return: `None`
         """
         company_df = await self.__download_report_from_yandex(
             report_id=message.report_id,
             token=message.yandex_id_token,
-            report_name=message.report_name   # f"{datetime.datetime.now(datetime.UTC)}"
+            report_name=message.report_name
         )
         if company_df is None:
-            # If the report cannot be generated online, an error is returned.
-            await self.__repository.update_company_report_info(report_id=message.report_id, info="Error: report cannot be generated online.")
-            print("ошибка")
+            await self.__repository.update_company_report_info(
+                report_id=message.report_id,
+                is_ready=False,
+                info="Error: report cannot be generated online."
+            )
             return
         company_df = self.__preprocessing_company_dataframe(company_df=company_df)
         company_df = self.__cluster_advertising_company(company_df=company_df)
