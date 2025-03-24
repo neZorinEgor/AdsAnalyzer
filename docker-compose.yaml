@@ -38,34 +38,28 @@ services:
       redis:
         condition: service_healthy
 
-#  backend:
-#    container_name: backend
-#    env_file:
-#      - .env
-#    ports:
-#      - ${APP_PORT}:${APP_PORT}
-#    command: bash -c "alembic upgrade head && uvicorn src.main:app --host ${APP_HOST} --port ${APP_PORT}"
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    depends_on:
-#      mysql:
-#        condition: service_healthy
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181  
+      ZOOKEEPER_TICK_TIME: 2000     
+    ports:
+      - 2181:2181  
 
-#  celery_worker:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    container_name: celery_worker
-#    command: celery -A src.auth.service:celery worker --loglevel=info
-#    depends_on:
-#      trainme:
-#         condition: service_healthy
-#    healthcheck:
-#      test: [ "CMD", "celery", "-A", "src.auth.service:celery", "status" ]
-#      interval: 10s
-#      timeout: 10s
-#      retries: 3
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper  
+    ports:
+      - 9092:9092  
+    hostname: kafka  
+    environment:
+      KAFKA_BROKER_ID: 1  
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092  
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT  
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT  
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2  # Фактор репликации для топика смещений.
 
 volumes:
   localstack-data:

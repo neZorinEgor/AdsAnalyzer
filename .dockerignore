@@ -3,3 +3,7 @@
 **/__pycache__/
 **/README.md
 .gitignore
+analys/
+asserts/
+README.md
+.env.example

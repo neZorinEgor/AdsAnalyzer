@@ -1,13 +1,11 @@
 import logging
-import webbrowser
-from contextlib import asynccontextmanager
 
-import requests
-from celery.bin.result import result
-from fastapi import FastAPI, status, Request, Response
-from fastapi.responses import FileResponse
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, status, Response
+from fastapi.responses import RedirectResponse
 from celery import Celery
 from fastapi.middleware.cors import CORSMiddleware
+from yandexid import AsyncYandexOAuth
 
 from src.auth.repository import AuthRepository
 from src.auth.router import router as auth_router
@@ -68,18 +66,23 @@ def healthcheck():
     return "ok"
 
 
+@app.get(path="/yandex")
+def yandex_oauth():
+    return RedirectResponse(f"https://oauth.yandex.ru/authorize?response_type=code&client_id={settings.CLIENT_ID}")
+
+
 @app.get("/callback")
-def callback(
-    access_token: str,
+async def callback(
+    code: str,
     response: Response,
 ):
-    webbrowser.open("https://oauth.yandex.ru/authorize?response_type=code&client_id=7dfabf24dbae4514868db23a991fb92e")
-    result = requests.post()
-    # print(request.query_params.items())
-
-# async def image_from_s3(url: str):
-#     file = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=url)
-#     return FileResponse()
+    payload = await AsyncYandexOAuth(
+        client_id=settings.CLIENT_ID,
+        client_secret=settings.CLIENT_SECRET,
+        redirect_uri="http://127.0.0.1:8000/callback"
+    ).get_token_from_code(code)
+    response.set_cookie("ads_analyzer", payload.access_token, expires=9999999)
+    # return RedirectResponse(f"/docs")
 
 # Application routers
 app.include_router(auth_router)

@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
 
+    CLIENT_ID: str
+    CLIENT_SECRET: str
+    REDIRECT_URI: str
+
     NGINX_HTTP_PORT: str
 
     @property

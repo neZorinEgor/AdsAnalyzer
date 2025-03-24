@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
 
+
 from src.ads.schemas import ADSInfoSchema
 
 
