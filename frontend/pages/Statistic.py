@@ -15,7 +15,7 @@ def fetch_data():
     url = "http://127.0.0.1:8000/ads/8"
     headers = {
         "accept": "application/json",
-        "Cookie": "ads_analyzer=y0__xD-15LEBhiOgjYgu53kyhLbssECE76XIqKImMH2ph83nit1Cw"
+        "Cookie": f"ads_analyzer={st.secrets["token"]}"
     }
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
