@@ -1,20 +1,68 @@
+import datetime
+from io import BytesIO
+from uuid import uuid4
+
 import requests
 from fastapi import APIRouter, UploadFile, File, Depends
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from src.ads.dependency import ads_token
-
+from src.ads.dependency import ads_token, user_payload
 
 from src.ads.repository import ADSInfoRepository
+from src.ads.schemas import Message
 from src.ads.service import AutoAnaalyzerService
+from src.brocker import producer
+from src.filestorage import s3_client
+from src.settings import settings
 
 router = APIRouter(prefix="/ads", tags=["ADS"])
 
 
-# @router.get("/token")
-# def ads_token(token: str | None = Depends(ads_token)):
-#     from yandexid import YandexID
-#     return YandexID(token).get_user_info_json()
+@router.post("/report")
+async def send_message_for_analyze_company(
+    report_id: int,
+    uuid: str = str(uuid4()),
+    token: str | None = Depends(ads_token),
+    payload: dict = Depends(user_payload)
+):
+    message = Message(
+        uuid=uuid,
+        report_id=report_id,
+        yandex_id_token=token,
+        report_name=f"{datetime.datetime.now(datetime.UTC)}"
+    )
+    producer.send(topic=settings.ANALYSIS_TOPIC, value=message.__dict__)
+    producer.flush()
+    await ADSInfoRepository.save_asd_report_info(
+        user_email=payload.default_email,
+        report_id=report_id,
+        is_ready=False,
+    )
+    return message
+
+
+@router.get("/paginate")
+async def ads_report_pagination(
+    limit: int,
+    offset: int,
+    payload: dict = Depends(user_payload)
+):
+    return await ADSInfoRepository.get_ads_report_paginate(limit=limit, offset=offset, user_email=payload.default_email)
+
+
+@router.get("/{report_id}")
+async def get_full_report_information(
+    report_id: int,
+    payload: dict = Depends(user_payload)
+):
+    report_info = await ADSInfoRepository.get_report_by_id(report_id=report_id, user_email=payload.default_email)
+    df = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=report_info.path_to_df)
+    df = pd.read_csv(filepath_or_buffer=BytesIO(df))
+    df.drop(columns=["Unnamed: 0"], inplace=True)
+    return {
+        f"bad_segments": f"{report_info.bad_segments}",
+        "clustered_df": df.to_json(force_ascii=False, orient='records')
+    }
 
 
 @router.post(path="/companies")

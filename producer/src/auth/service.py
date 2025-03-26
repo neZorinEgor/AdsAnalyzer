@@ -3,7 +3,6 @@ from typing import Type
 
 from redis import Redis
 
-from celery import Celery
 from pydantic import EmailStr
 
 from src.auth.core import IAuthRepository

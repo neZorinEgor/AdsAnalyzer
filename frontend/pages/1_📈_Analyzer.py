@@ -21,7 +21,7 @@ def upload_file_into_server():
             # Отправка файла на сервер
             files = {'company_df': (upload_file.name, upload_file, 'application/json')}
             response = requests.post(
-                'http://localhost:8001/ads/upload',
+                'http://localhost:8000/ads/upload',
                 headers={'accept': 'application/json'},
                 files=files
             )

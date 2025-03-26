@@ -9,8 +9,8 @@ from src.analysis.service import AnalysisService
 from src.analysis.utils import check_idempotency
 from src.config import settings
 
-router = KafkaRouter()
 logger = logging.getLogger(__name__)
+router = KafkaRouter()
 
 
 @router.subscriber(settings.ANALYSIS_TOPIC)

@@ -2,36 +2,38 @@ import datetime
 from typing import Optional, List
 
 from src.ads.core import IADSInfoRepository
-from src.ads.model import ADSInfoModel
-from src.ads.schemas import ADSInfoSchema
+from src.ads.model import AdsReportModel
+from src.ads.schemas import AdsReportInfoSchema
 from src.database import session_factory
 from sqlalchemy import select, delete, update
 
 
 class ADSInfoRepository(IADSInfoRepository):
     @staticmethod
-    async def save_asd_info(is_ready: bool, optimal_clusters: int, bad_company_segment: str, cluster_image_link: str) -> int:
+    async def get_ads_report_paginate(limit: int, offset: int, user_email: str):
         async with session_factory() as session:
-            save_ads_info_statement = ADSInfoModel(
-                uploaded_at=datetime.datetime.today(),
-                is_ready=False,
-                optimal_clusters=optimal_clusters,
-                bad_company_segments=bad_company_segment,
-                cluster_image_link=cluster_image_link,
-            )
-            session.add(save_ads_info_statement)
+            pagination_query = select(AdsReportModel).where(AdsReportModel.user_email==user_email).offset(offset).limit(limit)
+            ads_report_user = await session.execute(pagination_query)
+            ads_report_user = ads_report_user.scalars().all()
+            return [AdsReportInfoSchema(**i.__dict__) for i in ads_report_user]
+
+    @staticmethod
+    async def save_asd_report_info(user_email: str, **kwargs) -> None:
+        async with session_factory() as session:
+            model = AdsReportModel(user_email=user_email, **kwargs)
+            session.add(model)
             await session.commit()
-            return save_ads_info_statement.id
 
     @staticmethod
-    async def get_asd_info_by_id(owner_id: int, ads_info_id: int) -> Optional[ADSInfoSchema]:
-        # async with session_factory() as session:
-        #     ads_info_query_by_id = select(ADSInfoModel).where(ADSInfoModel.owner_id == owner_id).where(ADSInfoModel.id == ads_info_id)
-        #     result = await session.execute(ads_info_query_by_id)
-        #     result = result.scalar_one_or_none()
-        #     return ADSInfoSchema(**result.__dict__) if result else None
-        pass
+    async def get_report_by_id(report_id: int, user_email: str) -> Optional[AdsReportInfoSchema]:
+        async with session_factory() as session:
+            query = select(AdsReportModel).where(
+                (AdsReportModel.id == report_id) &
+                (AdsReportModel.user_email == user_email)
+            )
+            result = await session.execute(query)
+            report = result.scalar_one_or_none()
 
-    @staticmethod
-    async def delete_asd_info_by_id(user_id: int, ads_info_id: int) -> None:
-        pass
+            if report:
+                return AdsReportInfoSchema(**report.__dict__)
+            return None

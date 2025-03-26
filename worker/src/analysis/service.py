@@ -1,4 +1,7 @@
+import asyncio
 import datetime
+import json
+import os
 import time
 from typing import Type
 from warnings import filterwarnings
@@ -29,7 +32,7 @@ filterwarnings("ignore")
 class AnalysisService:
     __wcss: dict = {}                  # Сумма внутрикластерных расстояний
     __percentage_error_diff = {}       # Процентные изменения WCSS
-    __optimality_threshold: int = 20   # Порог разници процентного прироста для определения оптимального колличества кластеров
+    __optimality_threshold: int = 20   # Порог разницы процентного прироста для определения оптимального количества кластеров
     __optimal_num_cluster: int = 3     # Оптимальное количество кластеров
     __efficiency_columns: list = ["Показы", "Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)", "Ср. цена клика (руб.)", "Ср. ставка за клик (руб.)", "Отказы (%)", "Глубина (стр.)", "Прибыль (руб.)",]
     __cluster_img: np.ndarray
@@ -165,64 +168,86 @@ class AnalysisService:
                 data_dict["Глубина (стр.)"].append(values[20])
                 data_dict["Рентабельность"].append(values[21])
                 data_dict["Прибыль (руб.)"].append(values[22])
-            return pd.DataFrame(data_dict)[["Показы", "Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)", "Ср. цена клика (руб.)", "Ср. ставка за клик (руб.)", "Отказы (%)", "Глубина (стр.)", "Прибыль (руб.)"]]
+            return pd.DataFrame(data_dict)[["Возраст", "Пол", "Показы", "Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)", "Ср. цена клика (руб.)", "Ср. ставка за клик (руб.)", "Отказы (%)", "Глубина (стр.)", "Прибыль (руб.)"]]
         elif response.status_code == 202 or response.status_code == 201:
-            time.sleep(5)
-            print("рекурсия")
-            return await self.__download_report_from_yandex(report_id=report_id, token=token, report_name=report_name)
+            print("recursive step")
+            await asyncio.sleep(10)
+            return await self.__download_report_from_yandex(
+                report_id=report_id,
+                token=token,
+                report_name=report_name
+            )
         else:
             print(response.text)
             return None
 
-    def __cluster_advertising_company(self, company_df: pd.DataFrame):
+    def __cluster_advertising_company(self, company_df: pd.DataFrame) -> pd.DataFrame:
         print("start clustering")
         if "cluster_id" in self.__efficiency_columns:
             self.__efficiency_columns.remove("cluster_id")
 
-        X = pd.get_dummies(company_df[self.__efficiency_columns])
+        # Стандартизация данных
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(company_df[self.__efficiency_columns])
+
+        # Применение PCA
+        pca = PCA(n_components=2)
+        pca_result = pca.fit_transform(scaled_data)
+
+        # Создание DataFrame с PCA результатами
+        pca_df = pd.DataFrame(pca_result, columns=['pca_1', 'pca_2'])
+
+        self.__wcss = {}
         times = {}
 
         for i in range(1, 11):
             kmeans = KMeans(n_clusters=i, max_iter=300, init="k-means++", random_state=42)
             start_time = time.time()
-            self.__wcss[i] = kmeans.fit(X).inertia_
+            self.__wcss[i] = kmeans.fit(scaled_data).inertia_
             times[i] = time.time() - start_time
 
+        # Визуализация метода локтя
         plt.figure(figsize=(10, 6))
         plt.title("Выбор оптимального количества кластеров методом локтя")
-        # Ось WCSS
         ax1 = plt.gca()
         ax1.set_xlabel("Количество кластеров")
         ax1.set_ylabel("WCSS", color="blue")
-        ax1.plot(self.__wcss.keys(), self.__wcss.values(), marker='o', label="WCSS", color="blue")
+        ax1.plot(self.__wcss.keys(), self.__wcss.values(), marker='o', color="blue")
         ax1.tick_params(axis='y', labelcolor="blue")
-        # Ось времени выполнения
+
         ax2 = ax1.twinx()
-        ax2.set_ylabel("Время обучения (сек)")
-        ax2.plot(times.keys(), times.values(), marker='s', linestyle='dashed', color="red", label="Время обучения")
+        ax2.set_ylabel("Время обучения (сек)", color="red")
+        ax2.plot(times.keys(), times.values(), marker='s', linestyle='dashed', color="red")
         ax2.tick_params(axis='y', labelcolor="red")
+
         plt.xticks(range(1, 11))
-        plt.axvline(self.__optimal_num_cluster, color="indianred", linestyle="--", label="Оптимальный кластер")
+        plt.axvline(self.__optimal_num_cluster, color="indianred", linestyle="--")
         fig = plt.gcf()
         fig.canvas.draw()
         self.__wcss_img = np.array(fig.canvas.renderer.buffer_rgba())
         plt.close()
-        for item in range(len(self.__percentage_error_diff)-1):
-            proc_diff = list(self.__percentage_error_diff.items())[item][1]-list(self.__percentage_error_diff.items())[item+1][1]
-            if proc_diff>self.__optimality_threshold:
-                self.__optimal_num_cluster=int(list(self.__percentage_error_diff.items())[item][0][-1])
+
+        # Определение оптимального числа кластеров
+        for item in range(len(self.__percentage_error_diff) - 1):
+            proc_diff = list(self.__percentage_error_diff.items())[item][1] - \
+                        list(self.__percentage_error_diff.items())[item + 1][1]
+            if proc_diff > self.__optimality_threshold:
+                self.__optimal_num_cluster = int(list(self.__percentage_error_diff.items())[item][0][-1])
                 break
             else:
-                self.__optimal_num_cluster=3
-        # Постройка кластеров
-        pca = PCA(n_components=2)
-        pca_df = pca.fit_transform(StandardScaler().fit_transform(company_df[self.__efficiency_columns]))
-        pca_df = pd.DataFrame(pca_df)
+                self.__optimal_num_cluster = 3
+
+        # Кластеризация на PCA данных
         kmeans = KMeans(n_clusters=self.__optimal_num_cluster, max_iter=1000, init="k-means++", random_state=42)
-        predict = kmeans.fit_predict(pca_df)
-        self.__efficiency_columns.append("cluster_id")
-        company_df["cluster_id"]=predict
-        # Визуализация кластров
+        predict = kmeans.fit_predict(pca_result)
+
+        # Добавление результатов в исходный DataFrame
+        company_df = company_df.copy()
+        company_df["cluster_id"] = predict
+        company_df["pca_1"] = pca_df['pca_1']  # Добавляем первую компоненту PCA
+        company_df["pca_2"] = pca_df['pca_2']  # Добавляем вторую компоненту PCA
+
+        # Визуализация кластеров
         centroids = kmeans.cluster_centers_
         plt.figure(figsize=(10, 6))
         for i in np.unique(predict):
@@ -237,14 +262,15 @@ class AnalysisService:
         fig.canvas.draw()
         self.__cluster_img = np.array(plt.gcf().canvas.renderer.buffer_rgba())
         plt.close()
-        return company_df[self.__efficiency_columns].copy()
 
-    def __interpret_clusters(self, clustered_df: pd.DataFrame) -> None:
+        return company_df
+
+    def __interpret_clusters(self, clustered_company_df: pd.DataFrame) -> None:
         print("Light gradient boost start kill my intel...")
         sampler = RandomUnderSampler()
         X_resample, y_resample = sampler.fit_resample(
-            X=pd.get_dummies(clustered_df[self.__efficiency_columns]),
-            y=clustered_df["cluster_id"],
+            X=pd.get_dummies(clustered_company_df[self.__efficiency_columns]),
+            y=clustered_company_df["cluster_id"],
         )
         X_train, X_test, y_train, y_test = train_test_split(X_resample, y_resample)
         grid = GridSearchCV(
@@ -268,13 +294,26 @@ class AnalysisService:
         print(classification_report(y_pred=y_pred, y_true=y_test))
         explainer = shap.TreeExplainer(estimator)
         shap_values = explainer.shap_values(X_test)
+        np.save("sample.npz", shap_values)
+
+    async def __define_bad_segments(self, clustered_company_df: pd.DataFrame, rejection_threshold: int = 100):
+        rejection_result = []
+        result = {}
+        for j in range(self.__optimal_num_cluster):
+
+            group = clustered_company_df.query(f"cluster_id=={j}").groupby(["Пол", "Возраст"])[
+                ["CTR (%)", "Ср. цена клика (руб.)", "Отказы (%)", "Глубина (стр.)", "Расход (руб.)", 'Взвешенные показы',
+                 'Клики', ]
+            ].quantile(.5)
+            for i, b in group[group["Отказы (%)"] >= rejection_threshold].index:
+                if i != "не определен" or b != "не определен":
+                    rejection_result.append(f"{i}: {b}")
+            result[j] = rejection_result if rejection_result else "не выявлено"
+        return result
 
     async def kill_cpu_and_gpu_by_ml(self, message: Message) -> None:
         """
-        Automatically analysis ads-company.
-
-        :param message: message from kafka with payload
-        :return: `None`
+        TODO docs
         """
         company_df = await self.__download_report_from_yandex(
             report_id=message.report_id,
@@ -289,5 +328,21 @@ class AnalysisService:
             )
             return
         company_df = self.__preprocessing_company_dataframe(company_df=company_df)
-        company_df = self.__cluster_advertising_company(company_df=company_df)
-        self.__interpret_clusters(clustered_df=company_df)   # by-by, cpu
+        clustered_company_df = self.__cluster_advertising_company(company_df=company_df)
+        bad_segments = await self.__define_bad_segments(clustered_company_df=clustered_company_df, rejection_threshold=50)
+        bad_segments = json.dumps(bad_segments, ensure_ascii=False)
+        self.__interpret_clusters(clustered_company_df=clustered_company_df)
+        filename = f"{datetime.datetime.now(datetime.UTC).timestamp()}_sample.csv"
+        await self.__filestorage.upload_file(
+            bucket=settings.S3_BUCKET,
+            key=filename,
+            file=clustered_company_df.to_csv().encode()
+        )
+        await self.__repository.update_company_report_info(
+            report_id=message.report_id,
+            is_ready=True,
+            info=f"Successful analysis AC.",
+            bad_segments=bad_segments,
+            # path_to_interpreter_date=...
+            path_to_df=filename,
+        )

@@ -126,18 +126,18 @@ class AutoAnaalyzerService:
         cluster_plot_bytes = wcss_buf.getvalue()
         # Save cluster image in S3
         cluster_key = f"{datetime.datetime.now(datetime.UTC).timestamp()}_clusters.jpg"
-        await s3_client.upload_file(
-            bucket=settings.S3_BUCKETS,
-            key=cluster_key,
-            file=cluster_plot_bytes
-        )
+        # await s3_client.upload_file(
+        #     bucket=settings.S3_BUCKETS,
+        #     key=cluster_key,
+        #     file=cluster_plot_bytes
+        # )
         self.__cluster_img_link = f"{settings.s3_endpoint_url}/{settings.S3_BUCKETS}/{key}"
-        await self.__repository.save_asd_info(
-            is_ready=True,
-            optimal_clusters=self.__optimal_num_cluster,
-            bad_company_segment="foobar",
-            cluster_image_link=self.__cluster_img_link
-        )
+        # await self.__repository.save_asd_report_info(
+        #     is_ready=True,
+        #     optimal_clusters=self.__optimal_num_cluster,
+        #     bad_company_segment="foobar",
+        #     cluster_image_link=self.__cluster_img_link
+        # )
         wcss_buf.close()
 
     async def __define_bad_segments(self, rejection_threshold: int = 100):

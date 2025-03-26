@@ -1,80 +1,98 @@
 import streamlit as st
 import requests
-import pandas as pd
 
-# Заголовок страницы
-st.title("Мои компании")
+# Настройки страницы
+st.set_page_config(layout="wide", page_title="Рекламные кампании", page_icon="📊")
+st.title("Мои рекламные кампании")
 
-# Словарь для перевода типов кампаний
+# Словарь типов кампаний
 company_types = {
-    "TEXT_CAMPAIGN": "Текстово-графические объявления",
-    "UNIFIED_CAMPAIGN": "Единая перфоманс кампания",
+    "TEXT_CAMPAIGN": "Текстово-графические",
+    "UNIFIED_CAMPAIGN": "Перфоманс",
     "SMART_CAMPAIGN": "Смарт-баннеры"
 }
 
 
-# Функция для получения данных с API
-@st.cache_data(persist="disk")
-def fetch_ads_data():
-    url = "http://127.0.0.1:8000/ads/companies"
-    headers = {
-        "accept": "application/json",
-        "Cookie": "ads_analyzer=y0__xD-15LEBhiOgjYgu53kyhLbssECE76XIqKImMH2ph83nit1Cw"
-    }
-    response = requests.post(url, headers=headers)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        st.error(f"Ошибка при получении данных: {response.status_code}")
+# Получение данных
+@st.cache_data
+def get_data():
+    try:
+        response = requests.post(
+            "http://127.0.0.1:8000/ads/companies",
+            headers={
+                "accept": "application/json",
+                "Cookie": "ads_analyzer=y0__xD-15LEBhiOgjYgu53kyhLbssECE76XIqKImMH2ph83nit1Cw"
+            }
+        )
+        return response.json() if response.status_code == 200 else None
+    except:
         return None
 
 
-# Получение данных
-data = fetch_ads_data()
+data = get_data()
 
-if data:
-    # Отрисовка данных для каждой кампании
+# Фильтры в сайдбаре
+with st.sidebar:
+    st.subheader("Фильтры")
+
+    # Выбор типа кампании
+    type_filter = st.multiselect(
+        "Тип кампании",
+        options=list(company_types.values()),
+        default=list(company_types.values())
+    )
+
+    # Фильтр по бюджету
+    budget_filter = st.slider(
+        "Диапазон расходов (руб)",
+        min_value=0,
+        max_value=100000,
+        value=(0, 100000),
+        step=1000
+    )
+
+# Отображение данных
+if not data:
+    st.warning("Данные не загружены")
+else:
+    # Общая статистика
+    total = len(data)
+    total_spend = sum(c.get("Funds", {}).get("SharedAccountFunds", {}).get("Spend", 0) / 1000000 for c in data)
+
+    col1, col2 = st.columns(2)
+    col1.metric("Всего кампаний", total)
+    col2.metric("Общие расходы", f"{total_spend:,.2f} руб")
+
+    st.divider()
+
+    # Список кампаний
     for campaign in data:
-        st.write(f"### {campaign.get('Name')}")
-        # ID кампании
-        st.caption(f"{campaign.get('Id')}")
-        # Тип кампании
-        campaign_type = campaign.get("Type")
-        st.write(f"**Тип кампании:** {company_types.get(campaign_type, 'Неизвестный тип')}")
+        # Применяем фильтры
+        camp_type = company_types.get(campaign.get("Type"), "Другой")
+        spend = campaign.get("Funds", {}).get("SharedAccountFunds", {}).get("Spend", 0) / 1000000
 
-        # Бюджет и расходы
-        funds = campaign.get("Funds", {})
-        shared_funds = funds.get("SharedAccountFunds", {})
-        st.write(f"**Расходы:** {shared_funds.get('Spend', 0) / 1000000:.2f} руб.")
-        # Ежедневный бюджет
-        daily_budget = campaign.get("DailyBudget", {})
-        if daily_budget:
-            st.write(
-                f"**Ежедневный бюджет:** {daily_budget.get('Amount', 0) / 1000000:.2f} руб. ({daily_budget.get('Mode', 'Неизвестно')})")
-        else:
-            st.write("**Ежедневный бюджет:** Не установлен")
+        if camp_type not in type_filter:
+            continue
+        if not (budget_filter[0] <= spend <= budget_filter[1]):
+            continue
 
-        # Стратегия ставок
-        bidding_strategy = campaign.get("TextCampaign", {}).get("BiddingStrategy", {})
-        if bidding_strategy:
-            search_strategy = bidding_strategy.get("Search", {})
-            network_strategy = bidding_strategy.get("Network", {})
+        # Отображаем карточку кампании
+        with st.expander(f"{campaign.get('Name')} (ID: {campaign.get('Id')})"):
+            col1, col2 = st.columns(2)
 
-            st.write("**Стратегия ставок (Поиск):**")
-            st.write(f"- Тип: {search_strategy.get('BiddingStrategyType', 'Неизвестно')}")
-            st.write(f"- Размещение: Поиск: {search_strategy.get('PlacementTypes', {}).get('SearchResults', 'Нет')}, "
-                     f"Галерея: {search_strategy.get('PlacementTypes', {}).get('ProductGallery', 'Нет')}, "
-                     f"Динамические места: {search_strategy.get('PlacementTypes', {}).get('DynamicPlaces', 'Нет')}")
+            with col1:
+                st.write(f"**Тип:** {camp_type}")
+                st.write(f"**Статус:** {campaign.get('Status', '—')}")
 
-            st.write("**Стратегия ставок (Сеть):**")
-            st.write(f"- Тип: {network_strategy.get('BiddingStrategyType', 'Неизвестно')}")
-            if network_strategy.get("BiddingStrategyType") == "WB_MAXIMUM_CLICKS":
-                wb_max_clicks = network_strategy.get("WbMaximumClicks", {})
-                st.write(f"- Лимит расходов в неделю: {wb_max_clicks.get('WeeklySpendLimit', 0) / 1000000:.2f} руб.")
-                st.write(f"- Тип бюджета: {wb_max_clicks.get('BudgetType', 'Неизвестно')}")
+            with col2:
+                st.write(f"**Расходы:** {spend:,.2f} руб")
+                daily = campaign.get("DailyBudget", {})
+                if daily:
+                    st.write(f"**Бюджет:** {daily.get('Amount', 0) / 1000000:,.2f} руб/день")
 
-        # Счетчики
-        counter_ids = campaign.get("TextCampaign", {}).get("CounterIds", {}).get("Items", [])
-
-        # Разделитель между кампаниями
-        st.divider()
+            # Детали стратегии
+            strategy = campaign.get("TextCampaign", {}).get("BiddingStrategy", {})
+            if strategy:
+                st.write("**Стратегия ставок:**")
+                st.json(strategy)  # Просто показываем сырые данные для простоты
+            st.page_link("pages/Statistic.py")

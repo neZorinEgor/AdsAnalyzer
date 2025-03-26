@@ -31,7 +31,7 @@ class S3Client:
         async with self.__get_client() as client:
             return await client.put_object(Bucket=bucket, Key=key, Body=file)
 
-    async def get_file(self, bucket: str, key: str):
+    async def get_file(self, bucket: str, key: str) -> bytes:
         async with self.__get_client() as client:
             response = await client.get_object(Bucket=bucket, Key=key)
             async with response['Body'] as stream:

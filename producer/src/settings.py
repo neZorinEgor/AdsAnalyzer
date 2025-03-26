@@ -32,10 +32,6 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
 
-    FLOWER_USERNAME: str
-    FLOWER_PASSWORD: str
-    FLOWER_PORT: str
-
     S3_HOST: str
     S3_BUCKETS: str
     GATEWAY_LISTEN: str
@@ -47,7 +43,9 @@ class Settings(BaseSettings):
     CLIENT_SECRET: str
     REDIRECT_URI: str
 
-    NGINX_HTTP_PORT: str
+    KAFKA_HOST: str
+    KAFKA_PORT: int
+    ANALYSIS_TOPIC: str
 
     @property
     def postgresql_utl(self) -> str:
