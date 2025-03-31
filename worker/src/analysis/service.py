@@ -47,7 +47,8 @@ class AnalysisService:
         self.__repository = repository()
         self.__filestorage = filestorage()
 
-    def __preprocessing_company_dataframe(self, company_df: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def __preprocessing_company_dataframe(company_df: pd.DataFrame) -> pd.DataFrame:
         company_df.replace({',': '.'}, regex=True, inplace=True)
         company_df.replace({'--': -1}, regex=False, inplace=True)
         ignored_cols = ["№ Группы"]
@@ -61,7 +62,7 @@ class AnalysisService:
                 continue
         return company_df
 
-    async def __download_report_from_yandex(self, report_id: int, token: str, report_name: str) -> pd.DataFrame | None:
+    async def __download_report_from_direct_api(self, report_id: int, token: str, report_name: str) -> pd.DataFrame | None:
         headers = {
             'Authorization': f'Bearer {token}',
             'Accept-Language': f'en',
@@ -172,7 +173,7 @@ class AnalysisService:
         elif response.status_code == 202 or response.status_code == 201:
             print("recursive step")
             await asyncio.sleep(10)
-            return await self.__download_report_from_yandex(
+            return await self.__download_report_from_direct_api(
                 report_id=report_id,
                 token=token,
                 report_name=report_name
@@ -265,7 +266,7 @@ class AnalysisService:
 
         return company_df
 
-    def __interpret_clusters(self, clustered_company_df: pd.DataFrame) -> None:
+    def __interpret_clusters(self, clustered_company_df: pd.DataFrame) -> pd.DataFrame:
         print("Light gradient boost start kill my intel...")
         sampler = RandomUnderSampler()
         X_resample, y_resample = sampler.fit_resample(
@@ -290,11 +291,12 @@ class AnalysisService:
         grid.fit(X_train, y_train)
         estimator = LGBMClassifier(**grid.best_params_)
         estimator.fit(X_train, y_train)
-        y_pred = estimator.predict(X_test)
-        print(classification_report(y_pred=y_pred, y_true=y_test))
+        # y_pred = estimator.predict(X_test)
+        # print(classification_report(y_pred=y_pred, y_true=y_test))
         explainer = shap.TreeExplainer(estimator)
         shap_values = explainer.shap_values(X_test)
-        np.save("sample.npz", shap_values)
+        shap_impact_df = pd.DataFrame(np.abs(shap_values).mean(axis=0), index=X_test.columns)
+        return shap_impact_df
 
     async def __define_bad_segments(self, clustered_company_df: pd.DataFrame, rejection_threshold: int = 100):
         rejection_result = []
@@ -311,11 +313,11 @@ class AnalysisService:
             result[j] = rejection_result if rejection_result else "не выявлено"
         return result
 
-    async def kill_cpu_and_gpu_by_ml(self, message: Message) -> None:
+    async def kill_cpu_and_gpu_by_lgbm(self, message: Message) -> None:
         """
         TODO docs
         """
-        company_df = await self.__download_report_from_yandex(
+        company_df = await self.__download_report_from_direct_api(
             report_id=message.report_id,
             token=message.yandex_id_token,
             report_name=message.report_name
@@ -324,18 +326,24 @@ class AnalysisService:
             await self.__repository.update_company_report_info(
                 report_id=message.report_id,
                 is_ready=False,
-                info="Error: report cannot be generated online."
+                info="Error: report cannot be generated offline."
             )
             return
         company_df = self.__preprocessing_company_dataframe(company_df=company_df)
         clustered_company_df = self.__cluster_advertising_company(company_df=company_df)
         bad_segments = await self.__define_bad_segments(clustered_company_df=clustered_company_df, rejection_threshold=50)
         bad_segments = json.dumps(bad_segments, ensure_ascii=False)
-        self.__interpret_clusters(clustered_company_df=clustered_company_df)
-        filename = f"{datetime.datetime.now(datetime.UTC).timestamp()}_sample.csv"
+        shap_impact_df = self.__interpret_clusters(clustered_company_df=clustered_company_df)
+        impact_filename = f"{datetime.datetime.now(datetime.UTC).timestamp()}_shap_impact.csv"
+        clustered_filename = f"{datetime.datetime.now(datetime.UTC).timestamp()}_clustered.csv"
         await self.__filestorage.upload_file(
             bucket=settings.S3_BUCKET,
-            key=filename,
+            key=impact_filename,
+            file=shap_impact_df.to_csv().encode()
+        )
+        await self.__filestorage.upload_file(
+            bucket=settings.S3_BUCKET,
+            key=clustered_filename,
             file=clustered_company_df.to_csv().encode()
         )
         await self.__repository.update_company_report_info(
@@ -343,6 +351,6 @@ class AnalysisService:
             is_ready=True,
             info=f"Successful analysis AC.",
             bad_segments=bad_segments,
-            # path_to_interpreter_date=...
-            path_to_df=filename,
+            path_to_clustered_df=clustered_filename,
+            path_to_impact_df=impact_filename,
         )

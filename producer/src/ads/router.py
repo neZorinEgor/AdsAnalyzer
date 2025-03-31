@@ -56,12 +56,15 @@ async def get_full_report_information(
     payload: dict = Depends(user_payload)
 ):
     report_info = await ADSInfoRepository.get_report_by_id(report_id=report_id, user_email=payload.default_email)
-    df = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=report_info.path_to_df)
-    df = pd.read_csv(filepath_or_buffer=BytesIO(df))
-    df.drop(columns=["Unnamed: 0"], inplace=True)
+    clustered_df = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=report_info.path_to_clustered_df)
+    clustered_df = pd.read_csv(filepath_or_buffer=BytesIO(clustered_df))
+    clustered_df.drop(columns=["Unnamed: 0"], inplace=True)
+    impact_df = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=report_info.path_to_impact_df)
+    impact_df = pd.read_csv(filepath_or_buffer=BytesIO(impact_df))
     return {
         f"bad_segments": f"{report_info.bad_segments}",
-        "clustered_df": df.to_json(force_ascii=False, orient='records')
+        "clustered_df": clustered_df.to_json(force_ascii=False, orient='records'),
+        "impact_df": impact_df.to_json(force_ascii=False, orient='records')
     }
 
 

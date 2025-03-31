@@ -14,4 +14,5 @@ class AdsReportModel(Base):
     is_ready: Mapped[bool] = mapped_column(default=False)
     info: Mapped[str_255] = mapped_column(nullable=True, default=None)
     bad_segments: Mapped[str_255] = mapped_column(nullable=True, default=None)
-    path_to_df: Mapped[str_255] = mapped_column(nullable=True, default=None)
+    path_to_clustered_df: Mapped[str_255] = mapped_column(nullable=True, default=None)
+    path_to_impact_df: Mapped[str_255] = mapped_column(nullable=True, default=None)

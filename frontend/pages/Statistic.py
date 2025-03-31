@@ -12,7 +12,7 @@ st.set_page_config(layout="wide", page_title="Анализ рекламных о
 
 @st.cache_data
 def fetch_data():
-    url = "http://127.0.0.1:8000/ads/8"
+    url = "http://127.0.0.1:8000/ads/1"
     headers = {
         "accept": "application/json",
         "Cookie": f"ads_analyzer={st.secrets["token"]}"
@@ -21,12 +21,15 @@ def fetch_data():
     if response.status_code == 200:
         clustered_df = pd.read_json(StringIO(response.json().get("clustered_df")))
         clustered_df["cluster_id"] = clustered_df["cluster_id"].apply(lambda x: x + 1)
+        impact_df = pd.read_json(StringIO(response.json().get("impact_df")))
         return {
             "clustered_df": clustered_df,
+            "impact_df": impact_df,
             "bad_segments": json.loads(response.json().get("bad_segments"))
         }
     else:
         st.warning("Ошибка загрузки данных.")
+        print(response.text)
         return None
 
 
@@ -36,6 +39,7 @@ if data is None:
     st.stop()
 
 cluster_info = data.get("clustered_df")
+impact_df = data.get("impact_df")
 bad_segments = data.get("bad_segments", {})
 
 # Сайдбар с аналитикой
@@ -44,8 +48,8 @@ with st.sidebar:
     total_clusters = cluster_info['cluster_id'].nunique()
     st.metric("Всего кластеров", total_clusters)
 
-    avg_cluster_size = round(cluster_info['cluster_id'].value_counts().mean(), 1)
-    st.metric("Средний размер кластера", avg_cluster_size)
+    # avg_cluster_size = round(cluster_info['cluster_id'].value_counts().mean(), 1)
+    # st.metric("Средний размер кластера", avg_cluster_size)
 
     problem_clusters = sum(1 for seg in bad_segments.values() if seg != "не выявлено")
     st.metric("Кластеров с проблемами", f"{problem_clusters}/{total_clusters}")
@@ -118,33 +122,14 @@ with tab1:
 with tab2:
     st.header("Детальный анализ кластеров")
     # Распределение характеристик по кластерам
+    st.dataframe(impact_df)
     st.subheader("Распределение параметров по кластерам")
     metric = st.selectbox(
         "Выберите параметр для анализа:",
         options=['ctr', 'conversion_rate', 'spend']  # Замените на реальные колонки
     )
     st.write("todo")
-    #
-    # fig = px.box(
-    #     cluster_info,
-    #     x="cluster_id",
-    #     y=metric,
-    #     color="cluster_id",
-    #     title=f"Распределение {metric} по кластерам"
-    # )
-    # st.plotly_chart(fig, use_container_width=True)
-    #
-    # # Heatmap корреляции
-    # st.subheader("Корреляция параметров")
-    # numeric_cols = cluster_info.select_dtypes(include=['float64', 'int64']).columns
-    # corr_matrix = cluster_info[numeric_cols].corr()
-    # fig = px.imshow(
-    #     corr_matrix,
-    #     text_auto=True,
-    #     aspect="auto",
-    #     color_continuous_scale=px.colors.diverging.RdBu_r
-    # )
-    # st.plotly_chart(fig, use_container_width=True)
+
 
 with tab3:
     st.header("Анализ проблемных сегментов")

@@ -15,4 +15,5 @@ class AdsReportInfoSchema(BaseModel):
     is_ready: bool
     info: str | None = None
     bad_segments: str | None = None
-    path_to_df: str | None = None
+    path_to_clustered_df: str | None = None
+    path_to_impact_df: str | None = None
