@@ -20,7 +20,7 @@ router = APIRouter(prefix="/ads", tags=["ADS"])
 
 @router.post("/report")
 async def send_message_for_analyze_company(
-    report_id: int,
+    report_id: int = 97236485,
     uuid: str = str(uuid4()),
     token: str | None = Depends(ads_token),
     payload: dict = Depends(user_payload)
@@ -29,7 +29,7 @@ async def send_message_for_analyze_company(
         uuid=uuid,
         report_id=report_id,
         yandex_id_token=token,
-        report_name=f"{datetime.datetime.now(datetime.UTC)}"
+        report_name=f"{int(datetime.datetime.now(datetime.UTC).timestamp())}_report"
     )
     producer.send(topic=settings.ANALYSIS_TOPIC, value=message.__dict__)
     producer.flush()
@@ -100,27 +100,27 @@ def my_companies(token: str | None = Depends(ads_token)):
     return data.json()["result"]["Campaigns"]
 
 
-@router.post("/upload")
-async def analyze_company(company_df: UploadFile = File()):
-    # Preprocessing yandex direct dataframe
-    company_df = pd.read_csv(company_df.file, sep=";", header=3)
-    company_df.replace({',': '.'}, regex=True, inplace=True)
-    company_df.replace({'-': -1}, regex=False, inplace=True)
-    company_df["Дата"] = pd.to_datetime(company_df["Дата"], format="%d.%m.%Y")
-    ignored_cols = ["№ Группы"]
-    for col in company_df.drop(columns=["Дата"]).columns:
-        try:
-            if col in ignored_cols:
-                continue
-            isinstance(float(company_df[col][0]), float)
-            company_df[col] = company_df[col].astype("float64")
-        except ValueError:
-            continue
-    # Analyzer
-    company_analyzer = AutoAnaalyzerService(
-        repository=ADSInfoRepository,
-        company=company_df,
-        optimality_threshold=11,
-        scaler=StandardScaler
-    )
-    return await company_analyzer.analysis()
+# @router.post("/upload")
+# async def analyze_company(company_df: UploadFile = File()):
+#     # Preprocessing yandex direct dataframe
+#     company_df = pd.read_csv(company_df.file, sep=";", header=3)
+#     company_df.replace({',': '.'}, regex=True, inplace=True)
+#     company_df.replace({'-': -1}, regex=False, inplace=True)
+#     company_df["Дата"] = pd.to_datetime(company_df["Дата"], format="%d.%m.%Y")
+#     ignored_cols = ["№ Группы"]
+#     for col in company_df.drop(columns=["Дата"]).columns:
+#         try:
+#             if col in ignored_cols:
+#                 continue
+#             isinstance(float(company_df[col][0]), float)
+#             company_df[col] = company_df[col].astype("float64")
+#         except ValueError:
+#             continue
+#     # Analyzer
+#     company_analyzer = AutoAnaalyzerService(
+#         repository=ADSInfoRepository,
+#         company=company_df,
+#         optimality_threshold=11,
+#         scaler=StandardScaler
+#     )
+#     return await company_analyzer.analysis()

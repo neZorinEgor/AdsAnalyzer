@@ -7,10 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from yandexid import AsyncYandexOAuth
 
 from src.ads.dependency import ads_token
-from src.auth.repository import AuthRepository
-from src.auth.router import router as auth_router
 from src.ads.router import router as ads_router
-from src.auth.service import AuthService
 from src.settings import settings
 from src.filestorage import s3_client
 
@@ -24,10 +21,6 @@ logger = logging.getLogger(__name__)
 async def lifespan(application: FastAPI):
     # Create S3 Bucket
     await s3_client.create_bucket(bucket_name=settings.S3_BUCKETS)
-    await AuthService(AuthRepository).init_admin(
-        email=settings.INITIAL_ADMIN_EMAIL,
-        password=settings.INITIAL_ADMIN_PASSWORD
-    )
     yield
     pass
 

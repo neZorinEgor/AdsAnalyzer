@@ -16,3 +16,4 @@ def user_payload(token: str | None = Depends(ads_token)):
 
 def analysis_service():
     return AutoAnaalyzerService(repository=ADSInfoRepository)
+

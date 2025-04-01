@@ -1,10 +1,10 @@
 import json
+import numpy as np
 import requests
 import pandas as pd
 import streamlit as st
 import plotly.express as px
 from io import StringIO
-from streamlit_plotly_events import plotly_events
 
 # Настройка страницы
 st.set_page_config(layout="wide", page_title="Анализ рекламных объявлений", page_icon="📊")
@@ -20,11 +20,12 @@ def fetch_data():
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         clustered_df = pd.read_json(StringIO(response.json().get("clustered_df")))
-        clustered_df["cluster_id"] = clustered_df["cluster_id"].apply(lambda x: x + 1)
-        impact_df = pd.read_json(StringIO(response.json().get("impact_df")))
+        impact_info_df = pd.read_json(StringIO(response.json().get("impact_df")))
+        impact_info_df = impact_info_df.rename(columns={'Unnamed: 0': 'Метрика'})
+        # impact_df.col
         return {
             "clustered_df": clustered_df,
-            "impact_df": impact_df,
+            "impact_df": impact_info_df,
             "bad_segments": json.loads(response.json().get("bad_segments"))
         }
     else:
@@ -41,6 +42,7 @@ if data is None:
 cluster_info = data.get("clustered_df")
 impact_df = data.get("impact_df")
 bad_segments = data.get("bad_segments", {})
+clusters_id = list(set(cluster_info["cluster_id"]))
 
 # Сайдбар с аналитикой
 with st.sidebar:
@@ -82,10 +84,10 @@ with tab1:
         st.plotly_chart(fig)
     with col2:
         # Статистика по кластерам
-        st.subheader("Размеры кластеров")
+        st.subheader("Количество кластеров")
         cluster_stats = cluster_info['cluster_id'].value_counts().reset_index()
         cluster_stats.columns = ['Кластер', 'Количество объявлений']
-        st.dataframe(cluster_stats, height=300)
+        st.dataframe(cluster_stats, height=150)
     st.divider()
     st.markdown("""
     **Зачем мы группируем объявления в кластеры?**  
@@ -120,15 +122,35 @@ with tab1:
     """)
 
 with tab2:
-    st.header("Детальный анализ кластеров")
-    # Распределение характеристик по кластерам
-    st.dataframe(impact_df)
-    st.subheader("Распределение параметров по кластерам")
-    metric = st.selectbox(
-        "Выберите параметр для анализа:",
-        options=['ctr', 'conversion_rate', 'spend']  # Замените на реальные колонки
+    # print(impact_df)
+    # препроцессинг данных в "длинный" формат для plotly
+    df_melted = impact_df.melt(id_vars='Метрика', var_name='Кластер', value_name='SHAP Impact')
+    # интерактивный график
+    st.title('Вклад кластеров в метрики рекламной кампании')
+    st.write("SHAP Impact каждого кластера по метрикам")
+    # выбор типа графика (надо ли?)
+    chart_type = st.selectbox("Bar Chart (накопленный)",
+                             ["Bar Chart (накопленный)", "Bar Chart (сгруппированный)", "Line Chart"])
+    if chart_type == "Bar Chart (сгруппированный)":
+        fig = px.bar(df_melted, x='Метрика', y='SHAP Impact', color='Кластер',
+                     barmode='group', title='Вклад кластеров по метрикам (сгруппированный)')
+    elif chart_type == "Bar Chart (накопленный)":
+        fig = px.bar(df_melted, y='Метрика', x='SHAP Impact', color='Кластер', barmode='stack', title='Вклад кластеров по метрикам (накопленный)' )
+    else:
+        fig = px.line(df_melted, x='Метрика', y='SHAP Impact', color='Кластер', title='Вклад кластеров по метрикам (линейный график)')
+    # Настройка внешнего вида
+    fig.update_layout(
+        xaxis_title='Метрика',
+        yaxis_title='SHAP Impact',
+        hovermode='x unified',
+        xaxis={'categoryorder':'total descending'}
     )
-    st.write("todo")
+    fig.update_xaxes(tickangle=45)
+    st.plotly_chart(fig, use_container_width=True)
+    # SHAP Impact table
+    st.subheader("Таблица SHAP Impact")
+    st.dataframe(impact_df, height=len(impact_df.columns) * 101)
+    # Вредные советы...
 
 
 with tab3:
