@@ -7,7 +7,7 @@ class AdsReportModel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
     user_email: Mapped[str_255] = mapped_column(nullable=False)
-    report_id: Mapped[int] = mapped_column(nullable=False)
+    company_id: Mapped[int] = mapped_column(nullable=False)
     is_ready: Mapped[bool] = mapped_column(default=False)
     info: Mapped[str_255] = mapped_column(nullable=True, default=None)
     bad_segments: Mapped[str_255] = mapped_column(nullable=True, default=None)

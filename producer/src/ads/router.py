@@ -1,16 +1,13 @@
-import datetime
-from io import BytesIO
-from uuid import uuid4
-
-import requests
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, Depends
+from fastapi.responses import RedirectResponse
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from src.ads.dependency import ads_token, user_payload
+from src.ads.dependency import ads_token, user_payload, ads_service
 
 from src.ads.repository import ADSInfoRepository
 from src.ads.schemas import Message
-from src.ads.service import AutoAnaalyzerService
+from src.ads.service import AdsService
+
 from src.brocker import producer
 from src.filestorage import s3_client
 from src.settings import settings
@@ -18,109 +15,44 @@ from src.settings import settings
 router = APIRouter(prefix="/ads", tags=["ADS"])
 
 
-@router.post("/report")
-async def send_message_for_analyze_company(
-    report_id: int = 97236485,
-    uuid: str = str(uuid4()),
+@router.get(path="/yandex/oauth/login", tags=["ADS"])
+def yandex_oauth():
+    return RedirectResponse(f"https://oauth.yandex.ru/authorize?response_type=code&client_id={settings.CLIENT_ID}")
+
+
+@router.post("/report/create")
+async def analyze_company(
+    company_id: int = 97236485,
     token: str | None = Depends(ads_token),
-    payload: dict = Depends(user_payload)
+    service: AdsService = Depends(ads_service)
 ):
-    message = Message(
-        uuid=uuid,
-        report_id=report_id,
-        yandex_id_token=token,
-        report_name=f"{int(datetime.datetime.now(datetime.UTC).timestamp())}_report"
-    )
-    producer.send(topic=settings.ANALYSIS_TOPIC, value=message.__dict__)
-    producer.flush()
-    await ADSInfoRepository.save_asd_report_info(
-        user_email=payload.default_email,
-        report_id=report_id,
-        is_ready=False,
-    )
-    return message
+    return await service.generate_report_by_company(company_id=company_id, token=token)
 
 
-@router.get("/paginate")
-async def ads_report_pagination(
+@router.get("/reports/paginate")
+async def paginate_user_report(
     limit: int,
     offset: int,
-    payload: dict = Depends(user_payload)
+    token: str | None = Depends(ads_token),
+    service: AdsService = Depends(ads_service)
 ):
-    return await ADSInfoRepository.get_ads_report_paginate(limit=limit, offset=offset, user_email=payload.default_email)
+    return await service.paginate_user_report(limit=limit, offset=offset, token=token)
 
 
-@router.get("/{report_id}")
+@router.get("/report/{report_id}")
 async def get_full_report_information(
     report_id: int,
-    payload: dict = Depends(user_payload)
+    token: str | None = Depends(ads_token),
+    service: AdsService = Depends(ads_service)
 ):
-    report_info = await ADSInfoRepository.get_report_by_id(report_id=report_id, user_email=payload.default_email)
-    clustered_df = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=report_info.path_to_clustered_df)
-    clustered_df = pd.read_csv(filepath_or_buffer=BytesIO(clustered_df))
-    clustered_df.drop(columns=["Unnamed: 0"], inplace=True)
-    impact_df = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=report_info.path_to_impact_df)
-    impact_df = pd.read_csv(filepath_or_buffer=BytesIO(impact_df))
-    return {
-        f"bad_segments": f"{report_info.bad_segments}",
-        "clustered_df": clustered_df.to_json(force_ascii=False, orient='records'),
-        "impact_df": impact_df.to_json(force_ascii=False, orient='records')
-    }
+    return await service.get_report_info_by_id(report_id=report_id, token=token)
 
 
 @router.post(path="/companies")
-def my_companies(token: str | None = Depends(ads_token)):
-    url = "https://api.direct.yandex.com/json/v5/campaigns"
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Accept-Language': f'ru'
-    }
-    payload = {
-        "method": "get",
-        "params": {
-            "SelectionCriteria": {
-            },
-            "TextCampaignSearchStrategyPlacementTypesFieldNames": ["SearchResults", "ProductGallery", "DynamicPlaces"],
-            "FieldNames": [
-                "Name",
-                "DailyBudget",
-                "Funds",
-                "Type",
-                "Id"
-            ],
-            "TextCampaignFieldNames": [
-                "CounterIds",
-                "RelevantKeywords",
-                "BiddingStrategy"
-            ],
-            "SmartCampaignFieldNames": ["Settings"]
-        }
-    }
-    data = requests.post(url=url, headers=headers, json=payload)
-    return data.json()["result"]["Campaigns"]
+async def get_user_companies(
+    token: str | None = Depends(ads_token),
+    service: AdsService = Depends(ads_service)
+):
+    return await service.get_user_companies(token=token)
 
 
-# @router.post("/upload")
-# async def analyze_company(company_df: UploadFile = File()):
-#     # Preprocessing yandex direct dataframe
-#     company_df = pd.read_csv(company_df.file, sep=";", header=3)
-#     company_df.replace({',': '.'}, regex=True, inplace=True)
-#     company_df.replace({'-': -1}, regex=False, inplace=True)
-#     company_df["Дата"] = pd.to_datetime(company_df["Дата"], format="%d.%m.%Y")
-#     ignored_cols = ["№ Группы"]
-#     for col in company_df.drop(columns=["Дата"]).columns:
-#         try:
-#             if col in ignored_cols:
-#                 continue
-#             isinstance(float(company_df[col][0]), float)
-#             company_df[col] = company_df[col].astype("float64")
-#         except ValueError:
-#             continue
-#     # Analyzer
-#     company_analyzer = AutoAnaalyzerService(
-#         repository=ADSInfoRepository,
-#         company=company_df,
-#         optimality_threshold=11,
-#         scaler=StandardScaler
-#     )
-#     return await company_analyzer.analysis()

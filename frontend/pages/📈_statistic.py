@@ -5,17 +5,19 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 from io import StringIO
+from streamlit_cookies_controller import CookieController
 
 # Настройка страницы
 st.set_page_config(layout="wide", page_title="Анализ рекламных объявлений", page_icon="📊")
+controller = CookieController()
 
 
 @st.cache_data
-def fetch_data():
-    url = "http://127.0.0.1:8000/ads/1"
+def fetch_data(report_id):
+    url = f"http://127.0.0.1:8000/ads/report/{report_id}"
     headers = {
         "accept": "application/json",
-        "Cookie": f"ads_analyzer={st.secrets["token"]}"
+        "Cookie": f"ads_analyzer={controller.get("ads_token")}"
     }
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
@@ -35,7 +37,7 @@ def fetch_data():
 
 
 # Загрузка данных
-data = fetch_data()
+data = fetch_data(report_id=st.query_params["report_id"])
 if data is None:
     st.stop()
 

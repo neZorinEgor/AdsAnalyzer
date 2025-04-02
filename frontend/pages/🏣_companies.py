@@ -1,8 +1,11 @@
 import streamlit as st
 import requests
 
+from streamlit_cookies_controller import CookieController
+
 # Настройки страницы
-st.set_page_config(layout="wide", page_title="Рекламные кампании", page_icon="📊")
+st.set_page_config(layout="wide", page_title="Рекламные кампании", page_icon="🏣")
+controller = CookieController()
 st.title("Мои рекламные кампании")
 
 # Словарь типов кампаний
@@ -21,11 +24,12 @@ def get_data():
             "http://127.0.0.1:8000/ads/companies",
             headers={
                 "accept": "application/json",
-                "Cookie": f"ads_analyzer={st.secrets["token"]}"
+                "Cookie": f"ads_analyzer={controller.get("ads_token")}"
             }
         )
-        return response.json() if response.status_code == 200 else None
-    except:
+        print(response.text)
+        return response.json()["result"]["Campaigns"] if response.status_code == 200 else None
+    except Exception as e:
         return None
 
 
@@ -95,4 +99,4 @@ else:
             if strategy:
                 st.write("**Стратегия ставок:**")
                 st.json(strategy)  # Просто показываем сырые данные для простоты
-            st.page_link("pages/Statistic.py")
+            st.page_link("pages/📈_statistic.py")

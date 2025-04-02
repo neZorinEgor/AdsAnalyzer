@@ -318,13 +318,13 @@ class AnalysisService:
         TODO docs
         """
         company_df = await self.__download_report_from_direct_api(
-            report_id=message.report_id,
+            report_id=message.company_id,
             token=message.yandex_id_token,
             report_name=message.report_name
         )
         if company_df is None:
             await self.__repository.update_company_report_info(
-                report_id=message.report_id,
+                report_id=message.company_id,
                 is_ready=False,
                 info="Error: report cannot be generated offline."
             )
@@ -347,7 +347,7 @@ class AnalysisService:
             file=clustered_company_df.to_csv().encode()
         )
         await self.__repository.update_company_report_info(
-            report_id=message.report_id,
+            report_id=message.company_id,
             is_ready=True,
             info=f"Successful analysis AC.",
             bad_segments=bad_segments,

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class Message(BaseModel):
     uuid: str
-    report_id: int
+    company_id: int
     yandex_id_token: str
     report_name: str
 
@@ -11,7 +11,7 @@ class Message(BaseModel):
 class AdsReportInfoSchema(BaseModel):
     id: int
     user_email: str
-    report_id: int
+    company_id: int
     is_ready: bool
     info: str | None = None
     bad_segments: str | None = None

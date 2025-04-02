@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, status, Response, Depends
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from yandexid import AsyncYandexOAuth
+from yandexid import YandexOAuth
 
 from src.ads.dependency import ads_token
 from src.ads.router import router as ads_router
@@ -52,30 +52,23 @@ def healthcheck():
     return "ok"
 
 
-@app.get("/token", tags=["ADS"])
-def ads_token(token: str | None = Depends(ads_token)):
-    from yandexid import YandexID
-    return YandexID(token).get_user_info_json()
-
-
-@app.get(path="/yandex", tags=["ADS"])
-def yandex_oauth():
-    return RedirectResponse(f"https://oauth.yandex.ru/authorize?response_type=code&client_id={settings.CLIENT_ID}")
+# @app.get("/token", tags=["ADS"])
+# def ads_token(token: str | None = Depends(ads_token)):
+#     from yandexid import YandexID
+#     return YandexID(token).get_user_info_json()
 
 
 @app.get("/callback")
 async def callback(
     code: str,
-    response: Response,
 ):
-    payload = await AsyncYandexOAuth(
+    oauth = YandexOAuth(
         client_id=settings.CLIENT_ID,
         client_secret=settings.CLIENT_SECRET,
-        redirect_uri="http://127.0.0.1:8000/callback"
-    ).get_token_from_code(code)
-    print(payload.access_token)
-    response.set_cookie("ads_analyzer", payload.access_token, expires=9999999)
-    # return RedirectResponse(f"/docs")
+        redirect_uri="http://localhost:8502/authenticate"
+    )
+    payload = oauth.get_token_from_code(code)
+    return payload.access_token
 
 # Application routers
 # app.include_router(auth_router)
