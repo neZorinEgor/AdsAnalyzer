@@ -5,11 +5,9 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 from io import StringIO
-from streamlit_cookies_controller import CookieController
-
+from utils import controller
 # Настройка страницы
 st.set_page_config(layout="wide", page_title="Анализ рекламных объявлений", page_icon="📊")
-controller = CookieController()
 
 
 @st.cache_data
@@ -34,7 +32,6 @@ def fetch_data(report_id):
         st.warning("Ошибка загрузки данных.")
         print(response.text)
         return None
-
 
 # Загрузка данных
 data = fetch_data(report_id=st.query_params["report_id"])

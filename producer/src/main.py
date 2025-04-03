@@ -65,7 +65,7 @@ async def callback(
     oauth = YandexOAuth(
         client_id=settings.CLIENT_ID,
         client_secret=settings.CLIENT_SECRET,
-        redirect_uri="http://localhost:8502/authenticate"
+        redirect_uri="http://localhost:8501/authenticate"
     )
     payload = oauth.get_token_from_code(code)
     return payload.access_token

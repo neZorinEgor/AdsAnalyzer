@@ -1,8 +1,8 @@
 import streamlit as st
 import requests
 import json
-from streamlit_cookies_controller import CookieController
 from time import sleep
+
 
 # Настройки страницы
 st.set_page_config(
@@ -12,8 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Инициализация куки-контроллера
-controller = CookieController()
+from utils import controller
 
 # CSS стили
 st.markdown("""
@@ -105,6 +104,7 @@ def fetch_reports(limit=10, offset=0):
             return response.json()
         else:
             st.error(f"Ошибка сервера: {response.status_code}")
+            print(controller.get("ads_token"))
             return []
     except requests.exceptions.RequestException as e:
         st.error(f"Ошибка соединения: {str(e)}")

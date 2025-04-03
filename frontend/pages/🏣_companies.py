@@ -1,11 +1,10 @@
 import streamlit as st
 import requests
 
-from streamlit_cookies_controller import CookieController
+from utils import controller
 
 # Настройки страницы
 st.set_page_config(layout="wide", page_title="Рекламные кампании", page_icon="🏣")
-controller = CookieController()
 st.title("Мои рекламные кампании")
 
 # Словарь типов кампаний
@@ -20,6 +19,7 @@ company_types = {
 @st.cache_data
 def get_data():
     try:
+        print(controller.get("ads_token"))
         response = requests.post(
             "http://127.0.0.1:8000/ads/companies",
             headers={
@@ -27,7 +27,6 @@ def get_data():
                 "Cookie": f"ads_analyzer={controller.get("ads_token")}"
             }
         )
-        print(response.text)
         return response.json()["result"]["Campaigns"] if response.status_code == 200 else None
     except Exception as e:
         return None
