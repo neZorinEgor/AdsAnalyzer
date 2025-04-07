@@ -23,7 +23,7 @@ def yandex_oauth():
 @router.post("/report/create")
 async def analyze_company(
     company_id: int = 97236485,
-    token: str | None = Depends(ads_token),
+    token: str = Depends(ads_token),
     service: AdsService = Depends(ads_service)
 ):
     return await service.generate_report_by_company(company_id=company_id, token=token)

@@ -1,8 +1,6 @@
 import streamlit as st
 import requests
 
-from utils import controller
-
 # Настройки страницы
 st.set_page_config(layout="wide", page_title="Рекламные кампании", page_icon="🏣")
 st.title("Мои рекламные кампании")
@@ -19,12 +17,11 @@ company_types = {
 @st.cache_data
 def get_data():
     try:
-        print(controller.get("ads_token"))
         response = requests.post(
             "http://127.0.0.1:8000/ads/companies",
             headers={
                 "accept": "application/json",
-                "Cookie": f"ads_analyzer={controller.get("ads_token")}"
+                "Cookie": f"ads_analyzer={st.session_state["token"]}"
             }
         )
         return response.json()["result"]["Campaigns"] if response.status_code == 200 else None
@@ -48,9 +45,9 @@ with st.sidebar:
     # Фильтр по бюджету
     budget_filter = st.slider(
         "Диапазон расходов (руб)",
-        min_value=0,
-        max_value=100000,
-        value=(0, 100000),
+        min_value=-10000000,
+        max_value=10000000,
+        value=(-10000000, 10000000),
         step=1000
     )
 
@@ -98,4 +95,12 @@ else:
             if strategy:
                 st.write("**Стратегия ставок:**")
                 st.json(strategy)  # Просто показываем сырые данные для простоты
-            st.page_link("pages/📈_statistic.py")
+            if st.button("Проанализировать", key=campaign.get('Id')):
+                response = requests.post(
+                    url=f"http://127.0.0.1:8000/ads/report/create?company_id={campaign.get('Id')}",
+                    headers={
+                        "accept": "application/json",
+                        "Cookie": f"ads_analyzer={st.session_state['token']}"
+                    }
+                )
+                st.success(response.status_code)

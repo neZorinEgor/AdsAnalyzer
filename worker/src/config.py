@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +22,9 @@ class Settings(BaseSettings):
     S3_BUCKET: str
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
+    # LLM configuration
+    # PATH_TO_LLM_PROMPT: Path
+    # MAX_LLM_TOKENS: int
 
     @property
     def kafka_url(self) -> str:

@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime
 
+
 # Настройка страницы
 st.set_page_config(
     page_title="AdsAnalyzer",

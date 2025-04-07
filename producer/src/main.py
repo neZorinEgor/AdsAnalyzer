@@ -34,7 +34,10 @@ app = FastAPI(
 )
 
 # Origins url's for CORS
-origins = ["*"]
+origins = [
+    "http://localhost:8501/",
+    "https://localhost:8501/",
+]
 
 
 # Cors middleware

@@ -1,16 +1,51 @@
 import streamlit as st
 import requests
-from utils import controller
+from time import sleep
 
-st.write(st.query_params)
+st.title("Аутентификация")
+
+# Показываем параметры запроса (для отладки)
+st.write("Параметры запроса:", st.query_params)
 
 if "code" in st.query_params:
     code = st.query_params["code"]
-    params = {"code": code}
-    response = requests.get("http://127.0.0.1:8000/callback", params=params)
-    if response.status_code == 200:
-        token = response.text
-        controller.set('ads_token', token)
-    else:
-        st.write("Expire token. Try again latter")
 
+    # Добавляем индикатор загрузки
+    with st.spinner("Идёт аутентификация..."):
+        # Имитируем задержку для лучшего UX
+        sleep(1)
+
+        params = {"code": code}
+        response = requests.get("http://127.0.0.1:8000/callback", params=params)
+
+        if response.status_code == 200:
+            token = response.text
+            st.session_state["token"] = token
+
+            # Успешная аутентификация - зелёное сообщение
+            st.success("✅ Аутентификация прошла успешно!")
+
+            # Показываем токен в расширяемом блоке
+            with st.expander("Показать токен", expanded=False):
+                st.code(token)
+
+            # Дополнительная информация
+            st.info("Теперь вы можете использовать приложение с полученными правами.")
+
+        else:
+            # Ошибка аутентификации - красное сообщение
+            st.error("❌ Ошибка аутентификации: Срок действия токена истёк или произошла ошибка.")
+
+            # Кнопка для повторной попытки
+            if st.button("Попробовать снова"):
+                st.rerun()
+
+            # Дополнительная информация
+            st.warning("Пожалуйста, попробуйте авторизоваться позже или обратитесь в поддержку.")
+else:
+    # Сообщение, если код не получен
+    st.warning("Ожидание кода аутентификации...")
+
+    # Инструкция для пользователя
+    st.info(
+        "Если вы были перенаправлены на эту страницу после входа в систему, но видите это сообщение, возможно, произошла ошибка.")

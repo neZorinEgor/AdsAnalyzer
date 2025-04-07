@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import json
-import os
 import time
 from typing import Type
 from warnings import filterwarnings
@@ -13,6 +12,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from llama_cpp import Llama
 from lightgbm import LGBMClassifier
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.cluster import KMeans
@@ -37,6 +37,7 @@ class AnalysisService:
     __efficiency_columns: list = ["Показы", "Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)", "Ср. цена клика (руб.)", "Ср. ставка за клик (руб.)", "Отказы (%)", "Глубина (стр.)", "Прибыль (руб.)",]
     __cluster_img: np.ndarray
     __wcss_img: np.ndarray
+    __llm: Llama = Llama(model_path="/home/egor/Develop/llm/llama.cpp/builds/mistral-7b-instruct-v0.1.Q4_K_M.gguf", verbose=False)
 
     # Dependency Inversion & Injection
     def __init__(
@@ -298,6 +299,12 @@ class AnalysisService:
         shap_impact_df = pd.DataFrame(np.abs(shap_values).mean(axis=0), index=X_test.columns)
         return shap_impact_df
 
+    # async def __get_llm_response(self, impact_df: pd.DataFrame):
+    #     return self.__llm(
+    #         prompt=settings.PATH_TO_LLM_PROMPT.read_text() + str(impact_df),
+    #         max_tokens=settings.MAX_LLM_TOKENS,
+    #     )["choices"][0]["text"] # noqa
+
     async def __define_bad_segments(self, clustered_company_df: pd.DataFrame, rejection_threshold: int = 100):
         rejection_result = []
         result = {}
@@ -336,6 +343,7 @@ class AnalysisService:
         shap_impact_df = self.__interpret_clusters(clustered_company_df=clustered_company_df)
         impact_filename = f"{datetime.datetime.now(datetime.UTC).timestamp()}_shap_impact.csv"
         clustered_filename = f"{datetime.datetime.now(datetime.UTC).timestamp()}_clustered.csv"
+        # llm_response = self.__get_llm_response(shap_impact_df)
         await self.__filestorage.upload_file(
             bucket=settings.S3_BUCKET,
             key=impact_filename,
