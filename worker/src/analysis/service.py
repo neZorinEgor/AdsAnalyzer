@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 from llama_cpp import Llama
 from lightgbm import LGBMClassifier
 from imblearn.under_sampling import RandomUnderSampler
+from skopt import BayesSearchCV
+from skopt.space import Integer, Categorical, Iterable
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -275,25 +277,25 @@ class AnalysisService:
             y=clustered_company_df["cluster_id"],
         )
         X_train, X_test, y_train, y_test = train_test_split(X_resample, y_resample)
-        grid = GridSearchCV(
-            estimator=LGBMClassifier(random_state=42),
-            param_grid={
-                "random_state": [42],
-                "verbose": [-1],
-                "n_jobs": [3],
-                "n_estimators": range(100, 501, 100),
-                "max_depth": range(1, 6, 1),
-                "min_samples_split": range(10, 51, 10),
-                "min_samples_leaf": range(10, 51, 10),
+        # Search model params
+        optimizer = BayesSearchCV(
+            estimator=LGBMClassifier(random_state=42, verbose=-1, n_jobs=-1),
+            search_spaces={
+                "n_estimators": Categorical([100, 200, 300, 400, 500]),
+                "max_depth": Categorical([1, 2, 3, 4, 5]),
+                "min_child_samples": Categorical([10, 20, 30, 40, 50]),
+                "min_data_in_leaf": Categorical([10, 20, 30, 40, 50]),
             },
             cv=5,
-            n_jobs=-1,
+            random_state=42,
         )
-        grid.fit(X_train, y_train)
-        estimator = LGBMClassifier(**grid.best_params_)
+        optimizer.fit(X_train, y_train)
+        # Create estimator for personal company data
+        estimator = LGBMClassifier(**optimizer.best_params_)
         estimator.fit(X_train, y_train)
         # y_pred = estimator.predict(X_test)
         # print(classification_report(y_pred=y_pred, y_true=y_test))
+        # Get shap impact value foreach cluster
         explainer = shap.TreeExplainer(estimator)
         shap_values = explainer.shap_values(X_test)
         shap_impact_df = pd.DataFrame(np.abs(shap_values).mean(axis=0), index=X_test.columns)
