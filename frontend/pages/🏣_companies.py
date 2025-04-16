@@ -31,6 +31,7 @@ def get_data():
 
 data = get_data()
 
+
 # Фильтры в сайдбаре
 with st.sidebar:
     st.subheader("Фильтры")
