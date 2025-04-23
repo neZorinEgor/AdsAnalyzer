@@ -1,5 +1,4 @@
 import json
-import numpy as np
 import requests
 import pandas as pd
 import streamlit as st
@@ -24,7 +23,8 @@ def fetch_data(report_id):
         return {
             "clustered_df": clustered_df,
             "impact_df": impact_info_df,
-            "bad_segments": json.loads(json_data.get("bad_segments"))
+            "bad_segments": json.loads(json_data.get("bad_segments")),
+            "llm_response": json_data["llm_response"]
         }
     else:
         st.warning("Ошибка загрузки данных.")
@@ -40,6 +40,7 @@ if data is None:
 cluster_info_df = data["clustered_df"]
 impact_df = data["impact_df"]
 bad_segments = data.get("bad_segments", {})
+llm_response = data.get("llm_response")
 # clusters_id = list(set(cluster_info_df["cluster_id"]))
 
 # Сайдбар
@@ -179,7 +180,7 @@ with tab2:
                 st.markdown(f"""
                 <div style="background:linear-gradient(135deg, #f8f9fa, #e9ecef);padding:15px;border-radius:10px;margin-bottom:15px;border-left:4px solid #6c757d;">
                     <div style="font-size:16px;color:#6c757d;">Общие затраты</div>
-                    <div style="font-size:24px;font-weight:bold;color:#2c3e50;">{cluster_cost:,.1f} млн ₽</div>
+                    <div style="font-size:24px;font-weight:bold;color:#2c3e50;">{cluster_cost:,.1f} ₽</div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -204,7 +205,6 @@ with tab2:
 
             # Влияние на показатели с нормализованными прогресс-барами
             st.markdown("### 📈 Влияние на показатели (относительно максимума)")
-
             with st.container():
                 st.markdown("""
                 <style>
@@ -302,7 +302,7 @@ with tab2:
                     Этот кластер не имеет показателей с максимальным влиянием
                 </div>
                 """, unsafe_allow_html=True)
-
+    st.markdown(llm_response)
 
 # ⚠ Проблемные сегменты
 with tab3:

@@ -1,33 +1,33 @@
 import asyncio
+import logging
 import datetime
 import json
 import time
 from typing import Type
-from warnings import filterwarnings
+
 
 import shap
 import requests
-import matplotlib
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
-from llama_cpp import Llama
+from yandex_cloud_ml_sdk import YCloudML
+# from llama_cpp import Llama
 from lightgbm import LGBMClassifier
 from imblearn.under_sampling import RandomUnderSampler
 from skopt import BayesSearchCV
-from skopt.space import Integer, Categorical, Iterable
+from skopt.space import Categorical
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
 from src.analysis.core import IAnalysisRepository, IFileStorage
 from src.analysis.schemas import Message
 from src.config import settings
 
-matplotlib.use("agg")
+from warnings import filterwarnings
 filterwarnings("ignore")
 
 
@@ -35,11 +35,11 @@ class AnalysisService:
     __wcss: dict = {}                  # Сумма внутрикластерных расстояний
     __percentage_error_diff = {}       # Процентные изменения WCSS
     __optimality_threshold: int = 20   # Порог разницы процентного прироста для определения оптимального количества кластеров
-    __optimal_num_cluster: int = 3     # Оптимальное количество кластеров
+    __optimal_num_cluster: int = 3     # Оптимальное количество кластеров при неудачном расчете
     __efficiency_columns: list = ["Показы", "Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)", "Ср. цена клика (руб.)", "Ср. ставка за клик (руб.)", "Отказы (%)", "Глубина (стр.)", "Прибыль (руб.)",]
     __cluster_img: np.ndarray
     __wcss_img: np.ndarray
-    __llm: Llama = Llama(model_path="/home/egor/Develop/llm/llama.cpp/builds/mistral-7b-instruct-v0.1.Q4_K_M.gguf", verbose=False)
+    # __llm: Llama = Llama(model_path="mistral-7b-instruct-v0.1.Q4_K_M.gguf", verbose=False)
 
     # Dependency Inversion & Injection
     def __init__(
@@ -141,10 +141,10 @@ class AnalysisService:
                 "Расход (руб.)": [],  # Cost
                 "Ср. цена клика (руб.)": [],  # AvgCpc
                 "Ср. ставка за клик (руб.)": [],  # AvgEffectiveBid
-                "Отказы (%)": [],  # BounceRate
+                "Отказы (%)": [],      # BounceRate
                 "Глубина (стр.)": [],  # AvgPageviews
                 "Рентабельность": [],  # GoalsRoi
-                "Прибыль (руб.)": []  # Profit
+                "Прибыль (руб.)": []   # Profit
             }
             # Заполняем словарь данными из ответа
             for line in lines:
@@ -182,55 +182,29 @@ class AnalysisService:
                 report_name=report_name
             )
         else:
-            print(response.text)
+            logging.error(response.text)
             return None
 
     def __cluster_advertising_company(self, company_df: pd.DataFrame) -> pd.DataFrame:
-        print("start clustering")
+        logging.info("start clustering")
         if "cluster_id" in self.__efficiency_columns:
             self.__efficiency_columns.remove("cluster_id")
-
         # Стандартизация данных
         scaler = StandardScaler()
         scaled_data = scaler.fit_transform(company_df[self.__efficiency_columns])
-
         # Применение PCA
         pca = PCA(n_components=2)
         pca_result = pca.fit_transform(scaled_data)
-
-        # Создание DataFrame с PCA результатами
         pca_df = pd.DataFrame(pca_result, columns=['pca_1', 'pca_2'])
-
+        # Сбор данных
         self.__wcss = {}
         times = {}
-
+        # Вычисляем WCSS
         for i in range(1, 11):
             kmeans = KMeans(n_clusters=i, max_iter=300, init="k-means++", random_state=42)
             start_time = time.time()
             self.__wcss[i] = kmeans.fit(scaled_data).inertia_
             times[i] = time.time() - start_time
-
-        # Визуализация метода локтя
-        plt.figure(figsize=(10, 6))
-        plt.title("Выбор оптимального количества кластеров методом локтя")
-        ax1 = plt.gca()
-        ax1.set_xlabel("Количество кластеров")
-        ax1.set_ylabel("WCSS", color="blue")
-        ax1.plot(self.__wcss.keys(), self.__wcss.values(), marker='o', color="blue")
-        ax1.tick_params(axis='y', labelcolor="blue")
-
-        ax2 = ax1.twinx()
-        ax2.set_ylabel("Время обучения (сек)", color="red")
-        ax2.plot(times.keys(), times.values(), marker='s', linestyle='dashed', color="red")
-        ax2.tick_params(axis='y', labelcolor="red")
-
-        plt.xticks(range(1, 11))
-        plt.axvline(self.__optimal_num_cluster, color="indianred", linestyle="--")
-        fig = plt.gcf()
-        fig.canvas.draw()
-        self.__wcss_img = np.array(fig.canvas.renderer.buffer_rgba())
-        plt.close()
-
         # Определение оптимального числа кластеров
         for item in range(len(self.__percentage_error_diff) - 1):
             proc_diff = list(self.__percentage_error_diff.items())[item][1] - \
@@ -240,37 +214,18 @@ class AnalysisService:
                 break
             else:
                 self.__optimal_num_cluster = 3
-
         # Кластеризация на PCA данных
         kmeans = KMeans(n_clusters=self.__optimal_num_cluster, max_iter=1000, init="k-means++", random_state=42)
         predict = kmeans.fit_predict(pca_result)
-
         # Добавление результатов в исходный DataFrame
         company_df = company_df.copy()
         company_df["cluster_id"] = predict
         company_df["pca_1"] = pca_df['pca_1']  # Добавляем первую компоненту PCA
         company_df["pca_2"] = pca_df['pca_2']  # Добавляем вторую компоненту PCA
-
-        # Визуализация кластеров
-        centroids = kmeans.cluster_centers_
-        plt.figure(figsize=(10, 6))
-        for i in np.unique(predict):
-            plt.scatter(pca_df.iloc[predict == i, 0], pca_df.iloc[predict == i, 1], label=f'Кластер {i}')
-        plt.scatter(centroids[:, 0], centroids[:, 1], s=200, c='black', marker='^', label='Центры кластеров')
-        plt.legend(loc='lower right')
-        plt.xlabel('Первая главная компонента')
-        plt.ylabel('Вторая главная компонента')
-        plt.title('Визуализация кластеров с центроидами')
-        plt.tight_layout()
-        fig = plt.gcf()
-        fig.canvas.draw()
-        self.__cluster_img = np.array(plt.gcf().canvas.renderer.buffer_rgba())
-        plt.close()
-
         return company_df
 
     def __interpret_clusters(self, clustered_company_df: pd.DataFrame) -> pd.DataFrame:
-        print("Light gradient boost start kill my intel...")
+        logging.info("Light gradient boost start kill my intel...")
         sampler = RandomUnderSampler()
         X_resample, y_resample = sampler.fit_resample(
             X=pd.get_dummies(clustered_company_df[self.__efficiency_columns]),
@@ -293,19 +248,36 @@ class AnalysisService:
         # Create estimator for personal company data
         estimator = LGBMClassifier(**optimizer.best_params_)
         estimator.fit(X_train, y_train)
-        # y_pred = estimator.predict(X_test)
-        # print(classification_report(y_pred=y_pred, y_true=y_test))
+        y_pred = estimator.predict(X_test)
+        logging.info(classification_report(y_pred=y_pred, y_true=y_test))
         # Get shap impact value foreach cluster
         explainer = shap.TreeExplainer(estimator)
         shap_values = explainer.shap_values(X_test)
         shap_impact_df = pd.DataFrame(np.abs(shap_values).mean(axis=0), index=X_test.columns)
         return shap_impact_df
 
-    # async def __get_llm_response(self, impact_df: pd.DataFrame):
-    #     return self.__llm(
-    #         prompt=settings.PATH_TO_LLM_PROMPT.read_text() + str(impact_df),
-    #         max_tokens=settings.MAX_LLM_TOKENS,
-    #     )["choices"][0]["text"] # noqa
+    @staticmethod
+    async def __get_llm_response(impact_df: pd.DataFrame, company_df: pd.DataFrame):
+        sdk = YCloudML(
+            folder_id=settings.YANDEX_CLOUD_FOLDER_ID,
+            auth=settings.YANDEX_CLOUD_IAM_TOKEN
+        )
+        model = sdk.models.completions("yandexgpt-lite", model_version="rc")
+        model = model.configure(temperature=0.3)
+        prompt = settings.PATH_TO_DIFFERENCE_PROMPT.read_text()
+        for i in list(set(company_df["cluster_id"])):
+            prompt += f"\n cluster_id: {i} \n {str(company_df.describe())}"
+        prompt += f"\n А это данные метрики SHAP, она показывает отличие кластеров \n {str(impact_df)}"
+        result = model.run(
+            [{
+                "role": "system",
+                "text": prompt
+            }]
+        )
+        text_result = ""
+        for alternative in result:
+            text_result += f"\n{alternative.text}"
+        return text_result
 
     async def __define_bad_segments(self, clustered_company_df: pd.DataFrame, rejection_threshold: int = 100):
         rejection_result = []
@@ -343,9 +315,11 @@ class AnalysisService:
         bad_segments = await self.__define_bad_segments(clustered_company_df=clustered_company_df, rejection_threshold=50)
         bad_segments = json.dumps(bad_segments, ensure_ascii=False)
         shap_impact_df = self.__interpret_clusters(clustered_company_df=clustered_company_df)
-        impact_filename = f"{datetime.datetime.now(datetime.UTC).timestamp()}_shap_impact.csv"
-        clustered_filename = f"{datetime.datetime.now(datetime.UTC).timestamp()}_clustered.csv"
-        # llm_response = self.__get_llm_response(shap_impact_df)
+        key_date = int(datetime.datetime.now(datetime.UTC).timestamp())
+        impact_filename = f"{key_date}_shap_impact.csv"
+        clustered_filename = f"{key_date}_clustered.csv"
+        deference_between_clusters_filename = f"{key_date}_interpreter_clusters.txt"
+        llm_response = await self.__get_llm_response(shap_impact_df, clustered_company_df)
         await self.__filestorage.upload_file(
             bucket=settings.S3_BUCKET,
             key=impact_filename,
@@ -356,6 +330,11 @@ class AnalysisService:
             key=clustered_filename,
             file=clustered_company_df.to_csv().encode()
         )
+        await self.__filestorage.upload_file(
+            bucket=settings.S3_BUCKET,
+            key=deference_between_clusters_filename,
+            file=llm_response.encode()
+        )
         await self.__repository.update_company_report_info(
             report_id=message.company_id,
             is_ready=True,
@@ -363,4 +342,5 @@ class AnalysisService:
             bad_segments=bad_segments,
             path_to_clustered_df=clustered_filename,
             path_to_impact_df=impact_filename,
+            path_to_llm_response=deference_between_clusters_filename
         )

@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from src.ads.dependency import ads_token, user_payload, ads_service
 
 from src.ads.repository import ADSInfoRepository
-from src.ads.schemas import Message
+from src.ads.schemas import AnalysisKafkaMessage
 from src.ads.service import AdsService
 
 from src.brocker import producer

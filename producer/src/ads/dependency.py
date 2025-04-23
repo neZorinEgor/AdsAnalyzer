@@ -7,8 +7,6 @@ from fastapi import Cookie, Depends, HTTPException, status
 
 
 def ads_token(ads_analyzer: Annotated[str | None, Cookie()] = None):
-    # if ads_analyzer is None:
-    #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is null.")
     return ads_analyzer
 
 

@@ -1,4 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
+
+
+BASE_DIR = Path(__file__).parent.parent
 
 
 class Settings(BaseSettings):
@@ -23,6 +27,10 @@ class Settings(BaseSettings):
     # LLM configuration
     # PATH_TO_LLM_PROMPT: Path
     # MAX_LLM_TOKENS: int
+    YANDEX_CLOUD_FOLDER_ID: str
+    YANDEX_CLOUD_IAM_TOKEN: str
+    #
+    PATH_TO_DIFFERENCE_PROMPT: Path = BASE_DIR / "prompts" / "difference_between_cluster_prompt.txt"
 
     @property
     def kafka_url(self) -> str:

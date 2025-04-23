@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class Message(BaseModel):
+class AnalysisKafkaMessage(BaseModel):
     uuid: str
     company_id: int
     yandex_id_token: str
@@ -17,3 +17,4 @@ class AdsReportInfoSchema(BaseModel):
     bad_segments: str | None = None
     path_to_clustered_df: str | None = None
     path_to_impact_df: str | None = None
+    path_to_llm_response: str | None = None

@@ -2,14 +2,13 @@ import datetime
 from io import BytesIO
 from uuid import uuid4
 
-from fastapi import HTTPException
 from yandexid import YandexID
 import pandas as pd
 import requests
 
 from src.ads.core import IADSRepository
 from src.ads.exceptions import report_not_founded_error, report_not_ready_error
-from src.ads.schemas import Message
+from src.ads.schemas import AnalysisKafkaMessage
 from src.settings import settings
 from src.filestorage import s3_client
 from src.brocker import producer
@@ -22,7 +21,7 @@ class AdsService:
 
     async def generate_report_by_company(self, company_id: int, token: str):
         uuid = str(uuid4())
-        message = Message(
+        message = AnalysisKafkaMessage(
             uuid=uuid,
             company_id=company_id,
             yandex_id_token=token,
@@ -55,10 +54,12 @@ class AdsService:
         clustered_df.drop(columns=["Unnamed: 0"], inplace=True)
         impact_df = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=report_info.path_to_impact_df)
         impact_df = pd.read_csv(filepath_or_buffer=BytesIO(impact_df))
+        llm_response = await s3_client.get_file(bucket=settings.S3_BUCKETS, key=report_info.path_to_llm_response)
         return {
             f"bad_segments": f"{report_info.bad_segments}",
             "clustered_df": clustered_df.to_json(force_ascii=False, orient='records'),
-            "impact_df": impact_df.to_json(force_ascii=False, orient='records')
+            "impact_df": impact_df.to_json(force_ascii=False, orient='records'),
+            "llm_response": llm_response.decode("utf-8")
         }
 
     @staticmethod

@@ -14,3 +14,4 @@ class AdsReportModel(Base):
     bad_segments: Mapped[str_255] = mapped_column(nullable=True, default="Now not founded.")
     path_to_clustered_df: Mapped[str_255] = mapped_column(nullable=True, default=None)
     path_to_impact_df: Mapped[str_255] = mapped_column(nullable=True, default=None)
+    path_to_llm_response: Mapped[str_255] = mapped_column(nullable=True, default=None)
