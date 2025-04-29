@@ -5,14 +5,15 @@ import json
 import time
 from typing import Type
 
-
 import shap
 import requests
 import numpy as np
 import pandas as pd
 
+from tabulate import tabulate
 from yandex_cloud_ml_sdk import YCloudML
 # from llama_cpp import Llama
+from kneed import KneeLocator
 from lightgbm import LGBMClassifier
 from imblearn.under_sampling import RandomUnderSampler
 from skopt import BayesSearchCV
@@ -29,17 +30,17 @@ from src.config import settings
 
 from warnings import filterwarnings
 filterwarnings("ignore")
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
 
 
 class AnalysisService:
-    __wcss: dict = {}                  # Сумма внутрикластерных расстояний
-    __percentage_error_diff = {}       # Процентные изменения WCSS
     __optimality_threshold: int = 20   # Порог разницы процентного прироста для определения оптимального количества кластеров
     __optimal_num_cluster: int = 3     # Оптимальное количество кластеров при неудачном расчете
     __efficiency_columns: list = ["Показы", "Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)", "Ср. цена клика (руб.)", "Ср. ставка за клик (руб.)", "Отказы (%)", "Глубина (стр.)", "Прибыль (руб.)",]
+    __columns_to_llm: list = ["Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)", "Отказы (%)", "Глубина (стр.)", "cluster_id"]
     __cluster_img: np.ndarray
     __wcss_img: np.ndarray
-    # __llm: Llama = Llama(model_path="mistral-7b-instruct-v0.1.Q4_K_M.gguf", verbose=False)
 
     # Dependency Inversion & Injection
     def __init__(
@@ -146,9 +147,13 @@ class AnalysisService:
                 "Рентабельность": [],  # GoalsRoi
                 "Прибыль (руб.)": []   # Profit
             }
+
             # Заполняем словарь данными из ответа
             for line in lines:
                 values = line.split("\t")  # Разделяем по табуляции
+                if len(values) < 2:
+                    logging.error("bad data to analysis")
+                    return
                 data_dict["Дата"].append(values[0])
                 data_dict["Группа"].append(values[1])
                 data_dict["№ Группы"].append(values[2])
@@ -197,38 +202,28 @@ class AnalysisService:
         pca_result = pca.fit_transform(scaled_data)
         pca_df = pd.DataFrame(pca_result, columns=['pca_1', 'pca_2'])
         # Сбор данных
-        self.__wcss = {}
-        times = {}
-        # Вычисляем WCSS
-        for i in range(1, 11):
-            kmeans = KMeans(n_clusters=i, max_iter=300, init="k-means++", random_state=42)
-            start_time = time.time()
-            self.__wcss[i] = kmeans.fit(scaled_data).inertia_
-            times[i] = time.time() - start_time
-        # Определение оптимального числа кластеров
-        for item in range(len(self.__percentage_error_diff) - 1):
-            proc_diff = list(self.__percentage_error_diff.items())[item][1] - \
-                        list(self.__percentage_error_diff.items())[item + 1][1]
-            if proc_diff > self.__optimality_threshold:
-                self.__optimal_num_cluster = int(list(self.__percentage_error_diff.items())[item][0][-1])
-                break
-            else:
-                self.__optimal_num_cluster = 3
+        # Выявление оптимального числа кластеров
+        # inertias = []
+        # for k in range(1, 11):
+        #     kmeans = KMeans(n_clusters=k, random_state=42).fit(scaled_data)
+        #     inertias.append(kmeans.inertia_)
+        # auto_kl = KneeLocator(range(1, 4), inertias, curve='convex')
+        self.__optimal_num_cluster = 3   # auto_kl.elbow
         # Кластеризация на PCA данных
         kmeans = KMeans(n_clusters=self.__optimal_num_cluster, max_iter=1000, init="k-means++", random_state=42)
         predict = kmeans.fit_predict(pca_result)
         # Добавление результатов в исходный DataFrame
         company_df = company_df.copy()
         company_df["cluster_id"] = predict
-        company_df["pca_1"] = pca_df['pca_1']  # Добавляем первую компоненту PCA
-        company_df["pca_2"] = pca_df['pca_2']  # Добавляем вторую компоненту PCA
+        company_df["pca_1"] = pca_df['pca_1']
+        company_df["pca_2"] = pca_df['pca_2']
         return company_df
 
     def __interpret_clusters(self, clustered_company_df: pd.DataFrame) -> pd.DataFrame:
         logging.info("Light gradient boost start kill my intel...")
         sampler = RandomUnderSampler()
         X_resample, y_resample = sampler.fit_resample(
-            X=pd.get_dummies(clustered_company_df[self.__efficiency_columns]),
+            X=pd.get_dummies(clustered_company_df),
             y=clustered_company_df["cluster_id"],
         )
         X_train, X_test, y_train, y_test = train_test_split(X_resample, y_resample)
@@ -258,21 +253,28 @@ class AnalysisService:
 
     @staticmethod
     async def __get_llm_response(impact_df: pd.DataFrame, company_df: pd.DataFrame):
-        sdk = YCloudML(
+        yandex_ml_sdk = YCloudML(
             folder_id=settings.YANDEX_CLOUD_FOLDER_ID,
             auth=settings.YANDEX_CLOUD_IAM_TOKEN
         )
-        model = sdk.models.completions("yandexgpt-lite", model_version="rc")
+        model = yandex_ml_sdk.models.completions("yandexgpt-lite", model_version="rc")
         model = model.configure(temperature=0.3)
         prompt = settings.PATH_TO_DIFFERENCE_PROMPT.read_text()
         for i in list(set(company_df["cluster_id"])):
-            prompt += f"\n cluster_id: {i} \n {str(company_df.describe())}"
-        prompt += f"\n А это данные метрики SHAP, она показывает отличие кластеров \n {str(impact_df)}"
+            prompt += f"\n cluster_id: {i} \n {company_df[company_df["cluster_id"] == i].describe().round(2)}"
+        prompt += f"\n А это данные метрики SHAP, она показывает отличие кластеров \n {str(impact_df.round(2))}"
+        print(prompt)
         result = model.run(
-            [{
-                "role": "system",
-                "text": prompt
-            }]
+            [
+                {
+                    "role": "system",
+                    "text": settings.PATH_TO_LLM_PROMPT.read_text()
+                },
+                {
+                    "role": "user",
+                    "text": prompt
+                }
+            ]
         )
         text_result = ""
         for alternative in result:
@@ -282,19 +284,19 @@ class AnalysisService:
     async def __define_bad_segments(self, clustered_company_df: pd.DataFrame, rejection_threshold: int = 100):
         rejection_result = []
         result = {}
-        for j in range(self.__optimal_num_cluster):
-
-            group = clustered_company_df.query(f"cluster_id=={j}").groupby(["Пол", "Возраст"])[
+        for num_cluster in range(self.__optimal_num_cluster):
+            group = clustered_company_df.query(f"cluster_id=={num_cluster}").groupby(["Пол", "Возраст"])[
                 ["CTR (%)", "Ср. цена клика (руб.)", "Отказы (%)", "Глубина (стр.)", "Расход (руб.)", 'Взвешенные показы',
                  'Клики', ]
             ].quantile(.5)
             for i, b in group[group["Отказы (%)"] >= rejection_threshold].index:
                 if i != "не определен" or b != "не определен":
                     rejection_result.append(f"{i}: {b}")
-            result[j] = rejection_result if rejection_result else "не выявлено"
+            result[num_cluster] = rejection_result if rejection_result else "не выявлено"
         return result
+        # return {0: "не выявлено"}
 
-    async def kill_cpu_and_gpu_by_lgbm(self, message: Message) -> None:
+    async def analysis_company(self, message: Message) -> None:
         """
         TODO docs
         """
@@ -312,14 +314,16 @@ class AnalysisService:
             return
         company_df = self.__preprocessing_company_dataframe(company_df=company_df)
         clustered_company_df = self.__cluster_advertising_company(company_df=company_df)
-        bad_segments = await self.__define_bad_segments(clustered_company_df=clustered_company_df, rejection_threshold=50)
+        bad_segments = await self.__define_bad_segments(clustered_company_df=clustered_company_df)
+        # TODO: изменить способ хранения сегментов
         bad_segments = json.dumps(bad_segments, ensure_ascii=False)
-        shap_impact_df = self.__interpret_clusters(clustered_company_df=clustered_company_df)
+        shap_impact_df = self.__interpret_clusters(clustered_company_df=clustered_company_df[self.__columns_to_llm])
+        llm_response = await self.__get_llm_response(shap_impact_df, clustered_company_df[self.__columns_to_llm])
         key_date = int(datetime.datetime.now(datetime.UTC).timestamp())
         impact_filename = f"{key_date}_shap_impact.csv"
         clustered_filename = f"{key_date}_clustered.csv"
         deference_between_clusters_filename = f"{key_date}_interpreter_clusters.txt"
-        llm_response = await self.__get_llm_response(shap_impact_df, clustered_company_df)
+
         await self.__filestorage.upload_file(
             bucket=settings.S3_BUCKET,
             key=impact_filename,

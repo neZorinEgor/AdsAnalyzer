@@ -1,4 +1,6 @@
 import json
+import random
+
 import requests
 import pandas as pd
 import streamlit as st
@@ -31,6 +33,10 @@ def fetch_data(report_id):
         return None
 
 
+def generate_colors(n):
+    return [f"hsl({random.randint(0, 360)}, 100%, 50%)" for _ in range(n)]
+
+
 data = fetch_data(report_id=st.session_state["last_report_id"])
 if data is None:
     st.stop()
@@ -41,6 +47,7 @@ cluster_info_df = data["clustered_df"]
 impact_df = data["impact_df"]
 bad_segments = data.get("bad_segments", {})
 llm_response = data.get("llm_response")
+colors = generate_colors(cluster_info_df['cluster_id'].nunique())
 # clusters_id = list(set(cluster_info_df["cluster_id"]))
 
 # Сайдбар
@@ -71,6 +78,7 @@ with tab1:
             x="pca_1",
             y="pca_2",
             color="cluster_id",
+            color_discrete_sequence=colors,
             hover_data=cluster_info_df.columns,
             labels={"x": "Главная компонента 1", "y": "Главная компонента 2"},
             title="Карта кластеров объявлений",

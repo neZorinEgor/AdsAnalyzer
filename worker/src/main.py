@@ -1,15 +1,32 @@
+import logging
+from contextlib import asynccontextmanager
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from faststream import FastStream
 from faststream.kafka import KafkaBroker
+from pytz import utc
 
 from src.analysis.router import router as analysis_router
-from src.config import BASE_DIR, settings
+from src.config import settings
+from src.utils import change_iam_token
 
-broker = KafkaBroker("localhost:9092",)
-app = FastStream(broker)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+
+)
+scheduler = AsyncIOScheduler(timezone=utc)
+
+
+@asynccontextmanager
+async def lifespan(_: FastStream):
+    scheduler.add_job(func=change_iam_token, trigger="interval", hours=6)
+    scheduler.start()
+    yield
+    scheduler.shutdown()
+
+
+broker = KafkaBroker(settings.kafka_url)
+app = FastStream(broker, lifespan=lifespan)
 broker.include_router(analysis_router)
-
-
-# @app.on_startup
-# def startup():
-#     print(settings.PATH_TO_DIFFERENCE_PROMPT)
-

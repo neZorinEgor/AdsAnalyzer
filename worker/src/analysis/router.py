@@ -19,4 +19,4 @@ async def analysis(
     service: AnalysisService = Depends(analysis_service)
 ) -> None:
     check_idempotency(message.uuid)
-    await service.kill_cpu_and_gpu_by_lgbm(message)
+    await service.analysis_company(message)

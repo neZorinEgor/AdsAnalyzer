@@ -29,8 +29,11 @@ class Settings(BaseSettings):
     # MAX_LLM_TOKENS: int
     YANDEX_CLOUD_FOLDER_ID: str
     YANDEX_CLOUD_IAM_TOKEN: str
-    #
+    YANDEX_IAM_TOKEN_API_URL: str
+    YANDEX_OAUTH_TOKEN: str
+
     PATH_TO_DIFFERENCE_PROMPT: Path = BASE_DIR / "prompts" / "difference_between_cluster_prompt.txt"
+    PATH_TO_LLM_PROMPT: Path = BASE_DIR / "prompts" / "llm_role_prompt.txt"
 
     @property
     def kafka_url(self) -> str:

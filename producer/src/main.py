@@ -1,19 +1,26 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, status, Response, Depends
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from yandexid import YandexOAuth
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from src.ads.dependency import ads_token
 from src.ads.router import router as ads_router
 from src.settings import settings
 from src.filestorage import s3_client
 
+from pytz import utc
+
+scheduler = AsyncIOScheduler(timezone=utc)
+
 # Logging configurations
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def sample_cron():
+    print("schedule...")
 
 
 # Event manager
@@ -22,7 +29,7 @@ async def lifespan(application: FastAPI):
     # Create S3 Bucket
     await s3_client.create_bucket(bucket_name=settings.S3_BUCKETS)
     yield
-    pass
+    scheduler.shutdown()
 
 
 app = FastAPI(
