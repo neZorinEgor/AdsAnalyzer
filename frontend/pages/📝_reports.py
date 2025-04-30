@@ -97,7 +97,7 @@ def show_loading():
 
 # Получение данных с обработкой ошибок
 @st.cache_data(ttl=60, show_spinner=False)
-def fetch_reports(limit=20, offset=0):
+def fetch_reports(limit=100, offset=0):
     url = f"http://127.0.0.1:8000/ads/reports/paginate?limit={limit}&offset={offset}"
     try:
         with st.spinner("⌛ Получаем данные с сервера..."):

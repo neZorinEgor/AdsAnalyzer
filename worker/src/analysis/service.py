@@ -2,7 +2,6 @@ import asyncio
 import logging
 import datetime
 import json
-import time
 from typing import Type
 
 import shap
@@ -10,10 +9,7 @@ import requests
 import numpy as np
 import pandas as pd
 
-from tabulate import tabulate
 from yandex_cloud_ml_sdk import YCloudML
-# from llama_cpp import Llama
-from kneed import KneeLocator
 from lightgbm import LGBMClassifier
 from imblearn.under_sampling import RandomUnderSampler
 from skopt import BayesSearchCV
@@ -32,6 +28,8 @@ from warnings import filterwarnings
 filterwarnings("ignore")
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
+
+logger = logging.getLogger(__name__)
 
 
 class AnalysisService:
@@ -152,7 +150,7 @@ class AnalysisService:
             for line in lines:
                 values = line.split("\t")  # Разделяем по табуляции
                 if len(values) < 2:
-                    logging.error("bad data to analysis")
+                    logger.error("bad data to analysis")
                     return
                 data_dict["Дата"].append(values[0])
                 data_dict["Группа"].append(values[1])
@@ -179,7 +177,7 @@ class AnalysisService:
                 data_dict["Прибыль (руб.)"].append(values[22])
             return pd.DataFrame(data_dict)[["Возраст", "Пол", "Показы", "Взвешенные показы", "Клики", "CTR (%)", "wCTR (%)", "Расход (руб.)", "Ср. цена клика (руб.)", "Ср. ставка за клик (руб.)", "Отказы (%)", "Глубина (стр.)", "Прибыль (руб.)"]]
         elif response.status_code == 202 or response.status_code == 201:
-            print("recursive step")
+            logger.info("recursive step")
             await asyncio.sleep(10)
             return await self.__download_report_from_direct_api(
                 report_id=report_id,
@@ -187,11 +185,11 @@ class AnalysisService:
                 report_name=report_name
             )
         else:
-            logging.error(response.text)
+            logger.error(response.text)
             return None
 
     def __cluster_advertising_company(self, company_df: pd.DataFrame) -> pd.DataFrame:
-        logging.info("start clustering")
+        logger.info("start clustering")
         if "cluster_id" in self.__efficiency_columns:
             self.__efficiency_columns.remove("cluster_id")
         # Стандартизация данных
@@ -201,14 +199,6 @@ class AnalysisService:
         pca = PCA(n_components=2)
         pca_result = pca.fit_transform(scaled_data)
         pca_df = pd.DataFrame(pca_result, columns=['pca_1', 'pca_2'])
-        # Сбор данных
-        # Выявление оптимального числа кластеров
-        # inertias = []
-        # for k in range(1, 11):
-        #     kmeans = KMeans(n_clusters=k, random_state=42).fit(scaled_data)
-        #     inertias.append(kmeans.inertia_)
-        # auto_kl = KneeLocator(range(1, 4), inertias, curve='convex')
-        self.__optimal_num_cluster = 3   # auto_kl.elbow
         # Кластеризация на PCA данных
         kmeans = KMeans(n_clusters=self.__optimal_num_cluster, max_iter=1000, init="k-means++", random_state=42)
         predict = kmeans.fit_predict(pca_result)
@@ -220,14 +210,14 @@ class AnalysisService:
         return company_df
 
     def __interpret_clusters(self, clustered_company_df: pd.DataFrame) -> pd.DataFrame:
-        logging.info("Light gradient boost start kill my intel...")
+        logger.info("Light gradient boost start kill my intel...")
         sampler = RandomUnderSampler()
         X_resample, y_resample = sampler.fit_resample(
-            X=pd.get_dummies(clustered_company_df),
+            X=pd.get_dummies(clustered_company_df[self.__efficiency_columns]),
             y=clustered_company_df["cluster_id"],
         )
         X_train, X_test, y_train, y_test = train_test_split(X_resample, y_resample)
-        # Search model params
+        # Перебор параметров модели
         optimizer = BayesSearchCV(
             estimator=LGBMClassifier(random_state=42, verbose=-1, n_jobs=-1),
             search_spaces={
@@ -240,11 +230,11 @@ class AnalysisService:
             random_state=42,
         )
         optimizer.fit(X_train, y_train)
-        # Create estimator for personal company data
+        # Создание и обучение алгоритма под каждую компанию
         estimator = LGBMClassifier(**optimizer.best_params_)
         estimator.fit(X_train, y_train)
         y_pred = estimator.predict(X_test)
-        logging.info(classification_report(y_pred=y_pred, y_true=y_test))
+        logger.info(classification_report(y_pred=y_pred, y_true=y_test))
         # Get shap impact value foreach cluster
         explainer = shap.TreeExplainer(estimator)
         shap_values = explainer.shap_values(X_test)
@@ -261,9 +251,9 @@ class AnalysisService:
         model = model.configure(temperature=0.3)
         prompt = settings.PATH_TO_DIFFERENCE_PROMPT.read_text()
         for i in list(set(company_df["cluster_id"])):
-            prompt += f"\n cluster_id: {i} \n {company_df[company_df["cluster_id"] == i].describe().round(2)}"
+            prompt += f"\n cluster_id: {i} \n {company_df[company_df['cluster_id'] == i].describe().round(2)}"
         prompt += f"\n А это данные метрики SHAP, она показывает отличие кластеров \n {str(impact_df.round(2))}"
-        print(prompt)
+        logger.info(prompt)
         result = model.run(
             [
                 {
@@ -317,7 +307,7 @@ class AnalysisService:
         bad_segments = await self.__define_bad_segments(clustered_company_df=clustered_company_df)
         # TODO: изменить способ хранения сегментов
         bad_segments = json.dumps(bad_segments, ensure_ascii=False)
-        shap_impact_df = self.__interpret_clusters(clustered_company_df=clustered_company_df[self.__columns_to_llm])
+        shap_impact_df = self.__interpret_clusters(clustered_company_df=clustered_company_df)
         llm_response = await self.__get_llm_response(shap_impact_df, clustered_company_df[self.__columns_to_llm])
         key_date = int(datetime.datetime.now(datetime.UTC).timestamp())
         impact_filename = f"{key_date}_shap_impact.csv"

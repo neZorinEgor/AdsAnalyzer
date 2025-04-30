@@ -1,13 +1,45 @@
 services:
-  s3:
-    container_name: s3
-    image: localstack/localstack:latest
+  minio-s3:
+    restart: always
+    image: minio/minio:RELEASE.2024-07-31T05-46-26Z
+    container_name: minio-s3
     ports:
-      - ${GATEWAY_LISTEN}:${GATEWAY_LISTEN}
-    volumes:
-      - localstack-data:/var/lib/localstack
+      - ${MINIO_API_PORT}:${MINIO_API_PORT}
+      - ${MINIO_WEB_UI_PORT}:${MINIO_WEB_UI_PORT}
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ':${MINIO_WEB_UI_PORT}' --address ':${MINIO_API_PORT}'
+    # volumes:
+    #   - ./minio_data:/data
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_PORT}/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - pp-net
+
+  s3_setup:
+    image: minio/mc:RELEASE.2024-08-13T05-33-17Z
+    container_name: s3_setup
+    depends_on:
+      - minio-s3
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    entrypoint: ["/bin/sh", "-c"]
+    env_file:
+      - .env
+    command: 
+      - |
+        mc alias set myminio http://minio-s3:${MINIO_API_PORT} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
+        mc admin user svcacct add --access-key ${MINIO_AWS_ACCESS_KEY_ID} --secret-key ${MINIO_AWS_SECRET_ACCESS_KEY} myminio ${MINIO_ROOT_USER}
+        mc mb myminio/${MINIO_BUCKET_NAME}
+    networks:
+      - pp-net
 
   redis:
     image: redis:8.0-M02-bookworm
@@ -21,45 +53,90 @@ services:
       interval: 5s
       timeout: 5s
       retries: 3
+    networks:
+      - pp-net
 
   postgres:
     image: postgres:latest
     container_name: postgres
     env_file:
       - .env
+    user: postgres
     ports:
       - ${POSTGRES_PORT}:${POSTGRES_PORT}
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      interval: 15s
-      timeout: 15s
-      retries: 4
-    depends_on:
-      redis:
-        condition: service_healthy
+      test: ["CMD-SHELL", "pg_isready", "-d", "database"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    networks:
+      - pp-net
 
   zookeeper:
+    container_name: zookeeper
     image: confluentinc/cp-zookeeper:latest
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181  
-      ZOOKEEPER_TICK_TIME: 2000     
+    env_file:
+      - .env  
     ports:
       - 2181:2181  
+    networks:
+      - pp-net
 
   kafka:
+    container_name: kafka
     image: confluentinc/cp-kafka:latest
     depends_on:
       - zookeeper  
     ports:
-      - 9092:9092  
+      - ${KAFKA_SAMPLE_PORT}:${KAFKA_SAMPLE_PORT}  
     hostname: kafka  
-    environment:
-      KAFKA_BROKER_ID: 1  
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092  
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT  
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT  
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2  # Фактор репликации для топика смещений.
+    env_file:
+      - .env
+    healthcheck:
+      test: kafka-topics --bootstrap-server kafka:${KAFKA_SAMPLE_PORT} --list
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - pp-net
 
-volumes:
-  localstack-data:
+  producer:
+    restart: always
+    container_name: producer
+    env_file:
+      - ./producer/.env
+    build:
+      context: producer
+      dockerfile: Dockerfile
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    command: bash -c "alembic upgrade head; uvicorn src.main:app --reload --host ${APP_HOST} --port ${APP_PORT}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - pp-net
+
+  analysis-worker:
+    container_name: analysis-worker
+    env_file:
+      - ./worker/.env
+    build: 
+      context: worker
+      dockerfile: Dockerfile
+    command: bash -c "sleep 10; faststream run src.main:app --workers 1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - pp-net
+
+
+networks:
+  pp-net:
+    driver: "bridge"

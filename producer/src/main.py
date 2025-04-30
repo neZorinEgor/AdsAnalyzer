@@ -1,37 +1,30 @@
+import base64
 import logging
 from contextlib import asynccontextmanager
 
+import requests
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
-from yandexid import YandexOAuth
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 
 from src.ads.router import router as ads_router
 from src.settings import settings
-from src.filestorage import s3_client
-
-from pytz import utc
-
-scheduler = AsyncIOScheduler(timezone=utc)
 
 # Logging configurations
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
-def sample_cron():
-    print("schedule...")
+logging.basicConfig(level=logging.INFO, )
 
 
 # Event manager
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    # Create S3 Bucket
-    await s3_client.create_bucket(bucket_name=settings.S3_BUCKETS)
     yield
-    scheduler.shutdown()
+    pass
 
 
+limiter = Limiter(key_func=get_remote_address, default_limits=["10/minutes"])
 app = FastAPI(
     title="📰 AdsAnalyzer",
     description="Platform for managing and analyzing the effectiveness of advertising campaigns using machine learning and data analysis methods",
@@ -39,6 +32,9 @@ app = FastAPI(
     docs_url="/docs",
     version="1.0.0",
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Origins url's for CORS
 origins = [
@@ -62,24 +58,27 @@ def healthcheck():
     return "ok"
 
 
-# @app.get("/token", tags=["ADS"])
-# def ads_token(token: str | None = Depends(ads_token)):
-#     from yandexid import YandexID
-#     return YandexID(token).get_user_info_json()
-
-
 @app.get("/callback")
 async def callback(
     code: str,
 ):
-    oauth = YandexOAuth(
-        client_id=settings.CLIENT_ID,
-        client_secret=settings.CLIENT_SECRET,
-        redirect_uri="http://localhost:8501/authenticate"
+    auth_string = f"{settings.CLIENT_ID}:{settings.CLIENT_SECRET}".encode('utf-8')
+    auth_b64 = base64.b64encode(auth_string).decode('utf-8')
+    result = requests.post(
+        url="https://oauth.yandex.ru/token",
+        data={
+            "grant_type": "authorization_code",
+            "code": code,
+            "client_id": settings.CLIENT_ID,
+            "client_secret": settings.CLIENT_SECRET
+        },
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": f"Basic {auth_b64}"
+        }
     )
-    payload = oauth.get_token_from_code(code)
-    return payload.access_token
+    if "error" not in result:
+        return result.json().get("access_token")
 
 # Application routers
-# app.include_router(auth_router)
 app.include_router(ads_router)

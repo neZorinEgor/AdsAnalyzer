@@ -1,7 +1,11 @@
+import logging
 from contextlib import asynccontextmanager
 from src.settings import settings
 
+from botocore.exceptions import ClientError
 from aiobotocore.session import get_session
+
+logger = logging.getLogger(__name__)
 
 
 class S3Client:
@@ -25,7 +29,13 @@ class S3Client:
 
     async def create_bucket(self, bucket_name: str):
         async with self.__get_client() as client:
-            await client.create_bucket(Bucket=bucket_name)
+            try:
+                await client.create_bucket(Bucket=bucket_name)
+                logger.info("Successful create bucket")
+            except ClientError as e:
+                match e.response['Error']['Code']:
+                    case "BucketAlreadyOwnedByYou":
+                        logger.warning("Bucket already exist")
 
     async def upload_file(self, bucket: str, key: str, file: bytes):
         async with self.__get_client() as client:

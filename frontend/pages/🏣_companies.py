@@ -55,6 +55,7 @@ company_types = {
 # Получение данных
 @st.cache_data(ttl=300)  # Кэшируем на 5 минут
 def get_data():
+    print(st.session_state['token'])
     try:
         response = requests.post(
             "http://127.0.0.1:8000/ads/companies",

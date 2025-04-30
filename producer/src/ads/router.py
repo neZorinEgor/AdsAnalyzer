@@ -1,16 +1,12 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from src.ads.dependency import ads_token, user_payload, ads_service
 
-from src.ads.repository import ADSInfoRepository
-from src.ads.schemas import AnalysisKafkaMessage
+
+from src.ads.dependency import ads_token, ads_service
 from src.ads.service import AdsService
 
-from src.brocker import producer
-from src.filestorage import s3_client
 from src.settings import settings
+
 
 router = APIRouter(prefix="/ads", tags=["ADS"])
 
@@ -54,5 +50,3 @@ async def get_user_companies(
     service: AdsService = Depends(ads_service)
 ):
     return await service.get_user_companies(token=token)
-
-

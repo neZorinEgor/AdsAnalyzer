@@ -2,7 +2,7 @@ import datetime
 from io import BytesIO
 from uuid import uuid4
 
-from yandexid import YandexID
+# from yandexid import YandexID
 import pandas as pd
 import requests
 
@@ -12,6 +12,7 @@ from src.ads.schemas import AnalysisKafkaMessage
 from src.settings import settings
 from src.filestorage import s3_client
 from src.brocker import producer
+from src.utils import get_user_payload
 
 
 class AdsService:
@@ -29,21 +30,22 @@ class AdsService:
         )
         producer.send(topic=settings.ANALYSIS_TOPIC, value=message.__dict__)
         producer.flush()
-        payload = YandexID(token).get_user_info_json()
+        # payload = YandexID(token).get_user_info_json()
+        payload = get_user_payload(token=token)
         await self.__repository.save_asd_report_info(
-            user_email=payload.default_email,
+            user_email=payload.get("default_email"),
             company_id=company_id,
             is_ready=False,
         )
         return message
 
     async def paginate_user_report(self, limit: int, offset: int, token: str):
-        payload = YandexID(token).get_user_info_json()
-        return await self.__repository.get_ads_report_paginate(limit=limit, offset=offset, user_email=payload.default_email)
+        payload = get_user_payload(token=token)
+        return await self.__repository.get_ads_report_paginate(limit=limit, offset=offset, user_email=payload.get("default_email"))
 
     async def get_report_info_by_id(self, report_id: int, token: str):
-        payload = YandexID(token).get_user_info_json()
-        report_info = await self.__repository.get_report_info_by_id(report_id=report_id, user_email=payload.default_email)
+        payload = get_user_payload(token=token)
+        report_info = await self.__repository.get_report_info_by_id(report_id=report_id, user_email=payload.get("default_email"))
         # TODO remove exception
         if report_info is None:
             raise report_not_founded_error

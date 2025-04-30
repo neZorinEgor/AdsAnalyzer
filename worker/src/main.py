@@ -21,6 +21,7 @@ scheduler = AsyncIOScheduler(timezone=utc)
 
 @asynccontextmanager
 async def lifespan(_: FastStream):
+    print(settings.kafka_url)
     scheduler.add_job(func=change_iam_token, trigger="interval", hours=6)
     scheduler.start()
     yield

@@ -33,9 +33,8 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
 
     S3_HOST: str
+    S3_PORT: int
     S3_BUCKETS: str
-    GATEWAY_LISTEN: str
-    SERVICES: str
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
 
@@ -57,7 +56,11 @@ class Settings(BaseSettings):
 
     @property
     def s3_endpoint_url(self):
-        return f"http://{settings.S3_HOST}:{settings.GATEWAY_LISTEN}"
+        return f"http://{settings.S3_HOST}:{settings.S3_PORT}"
+    
+    @property
+    def kafka_url(self):
+        return f"{self.KAFKA_HOST}:{self.KAFKA_PORT}"
 
     model_config = SettingsConfigDict(env_file=".env")
 
