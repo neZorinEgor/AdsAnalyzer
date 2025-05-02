@@ -11,7 +11,7 @@ st.set_page_config(layout="wide", page_title="Анализ рекламных о
 
 
 def fetch_data(report_id):
-    url = f"http://127.0.0.1:8000/ads/report/{report_id}"
+    url = f"{st.secrets['api_url']}/ads/report/{report_id}"
     headers = {
         "accept": "application/json",
         "Cookie": f"ads_analyzer={st.session_state['token']}"
@@ -43,6 +43,7 @@ if data is None:
     st.warning("Возникли проблемы при загрузке данных")
 
 
+# data
 cluster_info_df = data["clustered_df"]
 impact_df = data["impact_df"]
 bad_segments = data.get("bad_segments", {})
@@ -50,25 +51,22 @@ llm_response = data.get("llm_response")
 colors = generate_colors(cluster_info_df['cluster_id'].nunique())
 # clusters_id = list(set(cluster_info_df["cluster_id"]))
 
-# Сайдбар
+# sideabar
 with st.sidebar:
     st.header("📈 Ключевые метрики")
     total_clusters = cluster_info_df['cluster_id'].nunique()
     st.metric("Всего кластеров", total_clusters)
-
     problem_clusters = sum(1 for seg in bad_segments.values() if seg != "не выявлено")
     st.metric("Кластеров с проблемами", f"{problem_clusters}/{total_clusters}")
 
-# Основной заголовок
+# main header
 st.title("Анализ эффективности рекламных объявлений")
-st.markdown("""
-Визуализация кластеров похожих объявлений и выявление проблемных сегментов аудитории.
-""")
+st.markdown("""Визуализация кластеров похожих объявлений и выявление проблемных сегментов аудитории.""")
 
-# Вкладки
+# page tabs
 tab1, tab2, tab3 = st.tabs(["📊 Кластеры объявлений", "🔍 Детализация кластеров", "⚠ Проблемные сегменты"])
 
-# Кластеры
+# clusters inforaphic tab
 with tab1:
     st.header("Распределение объявлений по кластерам")
     col1, col2 = st.columns([2, 1])
@@ -94,15 +92,13 @@ with tab1:
 
     st.divider()
 
-# 🔍 Детализация
+# cluster details
 with tab2:
-    # Подготовка данных
+    # data preprocessing
     df_melted = impact_df.melt(id_vars='Метрика', var_name='Кластер', value_name='Влияние')
-
     # Вычисляем максимальные значения для каждой метрики для нормализации
     max_values = impact_df.set_index('Метрика').max(axis=1)
     min_values = impact_df.set_index('Метрика').min(axis=1)
-
     st.title('📊 Влияние кластеров на рекламные метрики')
     st.markdown("""
     <div style="background-color:#f0f2f6;padding:15px;border-radius:10px;margin-bottom:20px;">
@@ -210,7 +206,6 @@ with tab2:
                     """, unsafe_allow_html=True)
 
             st.markdown("---")
-
             # Влияние на показатели с нормализованными прогресс-барами
             st.markdown("### 📈 Влияние на показатели (относительно максимума)")
             with st.container():
@@ -254,7 +249,7 @@ with tab2:
                     }
                 </style>
                 """, unsafe_allow_html=True)
-
+                # metrics
                 for metric in impact_df['Метрика'].unique():
                     val = impact_df[impact_df['Метрика'] == metric].iloc[0][cluster]
                     max_val = max_values[metric]
@@ -263,7 +258,7 @@ with tab2:
                     if max_val > 0:  # Только если есть значения
                         percentage = (val / max_val) * 100
                         color = "#2ecc71" if percentage > 75 else "#3498db" if percentage > 40 else "#f39c12"
-
+                        # styles
                         st.markdown(f"""
                         <div class="metric-progress">
                             <div class="metric-header">

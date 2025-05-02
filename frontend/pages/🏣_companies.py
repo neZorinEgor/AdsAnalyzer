@@ -58,7 +58,7 @@ def get_data():
     print(st.session_state['token'])
     try:
         response = requests.post(
-            "http://127.0.0.1:8000/ads/companies",
+            f"{st.secrets['api_url']}/ads/companies",
             headers={
                 "accept": "application/json",
                 "Cookie": f"ads_analyzer={st.session_state['token']}"
@@ -236,7 +236,7 @@ else:
                     with st.spinner("Создание отчета..."):
                         try:
                             response = requests.post(
-                                url=f"http://127.0.0.1:8000/ads/report/create?company_id={campaign['id']}",
+                                url=f"{st.secrets['api_url']}/ads/report/create?company_id={campaign['id']}",
                                 headers={
                                     "accept": "application/json",
                                     "Cookie": f"ads_analyzer={st.session_state['token']}"

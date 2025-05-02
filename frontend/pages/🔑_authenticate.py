@@ -29,7 +29,7 @@ if "code" in st.query_params:
 
         try:
             response = requests.get(
-                "http://127.0.0.1:8000/callback",
+                f"{st.secrets['api_url']}/callback",
                 params={"code": code},
                 timeout=10
             )

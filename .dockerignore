@@ -6,4 +6,4 @@
 analys/
 asserts/
 README.md
-.env.example
+**/.env.example

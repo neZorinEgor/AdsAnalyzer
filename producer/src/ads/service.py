@@ -26,7 +26,7 @@ class AdsService:
             uuid=uuid,
             company_id=company_id,
             yandex_id_token=token,
-            report_name=f"{int(datetime.datetime.now(datetime.UTC).timestamp())}_report"
+            report_name=f"{int(datetime.datetime.utcnow().timestamp())}_report"
         )
         producer.send(topic=settings.ANALYSIS_TOPIC, value=message.__dict__)
         producer.flush()

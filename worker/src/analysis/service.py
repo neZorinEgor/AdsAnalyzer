@@ -247,12 +247,14 @@ class AnalysisService:
             folder_id=settings.YANDEX_CLOUD_FOLDER_ID,
             auth=settings.YANDEX_CLOUD_IAM_TOKEN
         )
-        model = yandex_ml_sdk.models.completions("yandexgpt-lite", model_version="rc")
-        model = model.configure(temperature=0.3)
+        model = yandex_ml_sdk.models.completions("yandexgpt", model_version="rc")
+        model = model.configure(temperature=1)
         prompt = settings.PATH_TO_DIFFERENCE_PROMPT.read_text()
         for i in list(set(company_df["cluster_id"])):
-            prompt += f"\n cluster_id: {i} \n {company_df[company_df['cluster_id'] == i].describe().round(2)}"
-        prompt += f"\n А это данные метрики SHAP, она показывает отличие кластеров \n {str(impact_df.round(2))}"
+            money = company_df[company_df['cluster_id'] == i]["Расход (руб.)"].sum() / 1000000
+            prompt += f"\nПервичная статистика данных кластера  #{i}. Затраты на кластер: {money} рублей\n {company_df[company_df['cluster_id'] == i].describe().round(2)}."
+        prompt += (f"\n\nА это данные метрики SHAP, она показывает отличие кластеров по разным признакам, ориентируйся по её значениям (какой кластер где выделяется)"
+                   f"а потом на основе этих данных смотри на первичную статистику каждого кластера (выше) и уже на основе этих данных делай выводы \nзначение SHAP метрики по кластерам:\n{str(impact_df.round(2))}")
         logger.info(prompt)
         result = model.run(
             [
@@ -309,7 +311,7 @@ class AnalysisService:
         bad_segments = json.dumps(bad_segments, ensure_ascii=False)
         shap_impact_df = self.__interpret_clusters(clustered_company_df=clustered_company_df)
         llm_response = await self.__get_llm_response(shap_impact_df, clustered_company_df[self.__columns_to_llm])
-        key_date = int(datetime.datetime.now(datetime.UTC).timestamp())
+        key_date = int(datetime.datetime.utcnow().timestamp())
         impact_filename = f"{key_date}_shap_impact.csv"
         clustered_filename = f"{key_date}_clustered.csv"
         deference_between_clusters_filename = f"{key_date}_interpreter_clusters.txt"

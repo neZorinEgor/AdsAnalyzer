@@ -136,6 +136,22 @@ services:
     networks:
       - pp-net
 
+  frontend:
+    container_name: frontend
+    build: 
+      context: frontend
+      dockerfile: Dockerfile
+    command: bash -c "sleep 10; streamlit run 🔐_login.py --server.port=8501 --server.address=0.0.0.0"
+    ports:
+      - 8501:8501
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - pp-net
+    
 
 networks:
   pp-net:
