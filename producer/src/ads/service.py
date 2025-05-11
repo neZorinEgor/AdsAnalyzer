@@ -17,7 +17,10 @@ from src.utils import get_user_payload
 
 class AdsService:
     # DI&I
-    def __init__(self, repository: type[IADSRepository]):
+    def __init__(
+            self, 
+            repository: type[IADSRepository]
+        ):
         self.__repository = repository()
 
     async def generate_report_by_company(self, company_id: int, token: str):

@@ -41,7 +41,10 @@ async def get_full_report_information(
     token: str | None = Depends(ads_token),
     service: AdsService = Depends(ads_service)
 ):
-    return await service.get_report_info_by_id(report_id=report_id, token=token)
+    return await service.get_report_info_by_id(
+        report_id=report_id, 
+        token=token
+)
 
 
 @router.post(path="/companies")
