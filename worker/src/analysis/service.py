@@ -21,7 +21,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
 from src.analysis.core import IAnalysisRepository, IFileStorage
-from src.analysis.schemas import Message
+from src.analysis.schemas import AnalysisMessage
 from src.config import settings
 
 from warnings import filterwarnings
@@ -288,7 +288,7 @@ class AnalysisService:
         return result
         # return {0: "не выявлено"}
 
-    async def analysis_company(self, message: Message) -> None:
+    async def analysis_company(self, message: AnalysisMessage) -> None:
         """
         TODO docs
         """

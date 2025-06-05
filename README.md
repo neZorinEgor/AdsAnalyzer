@@ -1,6 +1,6 @@
 # AdsAnalyzer 📰
 
-`No-Code` platform for analyzing the effectiveness of advertising campaigns using machine learning and data analysis methods
+Сервис для анализа эффективности рекламных кампаний `Яндекс.Директ`
 
-### Interaction
+### Architecture schema
 ![schema](./asserts/Group%205.png)

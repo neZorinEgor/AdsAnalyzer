@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     # Broker
     KAFKA_HOST: str
     KAFKA_PORT: int
-    ANALYSIS_TOPIC: str
+    KAFKA_ANALYSIS_TOPIC: str
+    KAFKA_ANALYSIS_GROUP_ID: str
     # DirectAPI
     REPORT_SERVICE_URL: str
     # Database
